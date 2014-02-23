@@ -63,7 +63,7 @@ public class Main extends Sprite
     addChild(_overlay);
 
     _debug = new DebugDisplay(_overlay.width, _overlay.height);
-    debugMode = _params.debugMode;
+    debugMode = _params.debug;
 
     stage.addEventListener(Event.ENTER_FRAME, onEnterFrame);
     stage.addEventListener(KeyboardEvent.KEY_DOWN, onKeyDown);
@@ -71,8 +71,9 @@ public class Main extends Sprite
     stage.addEventListener(MouseEvent.MOUSE_MOVE, onMouseMove);
 
     log("FlashVars: "+expandAttrs(info.parameters));
-    log("debugMode: "+_params.debugMode);
+    log("debug: "+_params.debug);
     log("url: "+_params.url);
+    log("fullscreen: "+_params.fullscreen);
     log("bufferTime: "+_params.bufferTime);
     log("bufferTimeMax: "+_params.bufferTimeMax);
     log("maxPauseBufferTime: "+_params.maxPauseBufferTime);
@@ -886,23 +887,23 @@ class StatusDisplay extends Control
 
 class Params
 {
-  public var debugMode:Boolean = false;
+  public var debug:Boolean = false;
+  public var url:String = null;
   public var bufferTime:Number = 1.0;
   public var bufferTimeMax:Number = 1.0;
   public var maxPauseBufferTime:Number = 30.0;
-  public var url:String = null;
   public var rtmpURL:String = null;
   public var streamPath:String = null;
   public var fullscreen:Boolean = false;
 
-  public function Params(loaderURL:String, obj:Object)
+  public function Params(baseurl:String, obj:Object)
   {
     var i:int;
 
     if (obj != null) {
-      // debugMode
-      if (obj.debugMode) {
-	debugMode = (parseInt(obj.debugMode) != 0);
+      // debug
+      if (obj.debug) {
+	debug = (parseInt(obj.debug) != 0);
       }
       // bufferTime
       if (obj.bufferTime) {
@@ -922,17 +923,6 @@ class Params
       if (obj.fullscreen) {
 	fullscreen = (parseInt(obj.fullscreen) != 0);
       }
-      // name
-      if (obj.name) {
-	i = loaderURL.indexOf("://")+3;
-	if (3 < i) {
-	  var j:int = loaderURL.indexOf("/", i);
-	  if (j < 0) {
-	    j = loaderURL.length;
-	  }
-	  url = "rtmp://"+loaderURL.substring(i, j)+"/"+obj.name;
-	}
-      }
       // url
       if (obj.url) {
 	url = obj.url;
@@ -940,6 +930,18 @@ class Params
     }
 
     if (url != null) {
+      if (url.substr(0, 1) == "/") {
+	// if url starts with "/", it means a relative url.
+	i = baseurl.indexOf("://");
+	if (0 < i) {
+	  baseurl = baseurl.substring(i+3);
+	  i = baseurl.indexOf("/");
+	  if (i < 0) {
+	    i = baseurl.length;
+	  }
+	  url = "rtmp://"+baseurl.substr(0, i)+url;
+	}
+      }
       i = url.lastIndexOf("/");
       rtmpURL = url.substr(0, i);
       streamPath = url.substr(i+1);
