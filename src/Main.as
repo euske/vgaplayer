@@ -32,8 +32,6 @@ public class Main extends Sprite
   private var _video:Video;
   private var _overlay:VideoOverlay;
   private var _playing:Boolean;
-  private var _paused:Boolean;
-  private var _buffull:Boolean;
 
   // Main()
   public function Main()
@@ -185,11 +183,13 @@ public class Main extends Sprite
       _updateVolume(_control.volumeSlider);
       _control.autohide = false;
       _control.status.text = "Connected";
+      _playing = false;
       startPlaying();
       break;
 
     case "NetConnection.Connect.Closed":
       stopPlaying();
+      _playing = false;
       _video.attachNetStream(null);
       _stream.removeEventListener(NetStatusEvent.NET_STATUS, onNetStatusEvent);
       _stream.removeEventListener(AsyncErrorEvent.ASYNC_ERROR, onAsyncErrorEvent);
@@ -201,7 +201,6 @@ public class Main extends Sprite
 
     case "NetStream.Play.Start":
       _playing = true;
-      _buffull = false;
       _control.autohide = false;
       _control.playButton.toPlay = false;
       _control.status.text = "Buffering...";
@@ -209,40 +208,24 @@ public class Main extends Sprite
 
     case "NetStream.Play.Stop":
     case "NetStream.Play.Complete":
+    case "NetStream.Buffer.Flush":
       _playing = false;
-      _buffull = false;
       _control.autohide = false;
       _control.playButton.toPlay = true;
       _control.status.text = "Stopped";
       break;
 
-    case "NetStream.Pause.Notify":
-      _paused = true;
-      _control.status.text = "Paused";
-      break;
-
-    case "NetStream.Unpause.Notify":
-      _paused = false;
-      break;
-
     case "NetStream.Buffer.Empty":
       if (_playing) {
-	_buffull = false;
 	_control.autohide = false;
 	_control.status.text = "Buffering...";
       }
       break;
     case "NetStream.Buffer.Full":
       if (_playing) {
-	_buffull = true;
 	_control.autohide = true;
 	_control.status.text = "Playing";
       }
-      break;
-    case "NetStream.Buffer.Flush":
-      _buffull = false;
-      _control.autohide = true;
-      _control.status.text = "Stopped";
       break;
     }
   }
@@ -303,9 +286,7 @@ public class Main extends Sprite
   {
     log("setPlayState: "+playing);
     if (playing) {
-      if (_paused) {
-	_stream.resume();
-      } else if (_playing) {
+      if (_playing) {
 
       } else if (_connection.connected) {
 	startPlaying();
@@ -314,7 +295,7 @@ public class Main extends Sprite
       }
     } else {
       if (_playing) {
-	_stream.pause();
+	stopPlaying();
       }
     }
   }
@@ -547,7 +528,7 @@ class DebugDisplay extends Sprite
 	    "liveDelay: "+stream.liveDelay+"\n");
     _playstat.text = text;
     _playstat.x = debugWidth - _playstat.width;
-    _playstat.y = debugHeight - _playstat.textHeight;
+    _playstat.y = debugHeight - _playstat.height;
 
     var info:NetStreamInfo = stream.info;
     text = ("isLive: "+info.isLive+"\n"+
@@ -562,7 +543,7 @@ class DebugDisplay extends Sprite
 	    "droppedFrames: "+info.droppedFrames+"\n");
     _streaminfo.text = text;
     _streaminfo.x = 0;
-    _streaminfo.y = debugHeight - _streaminfo.textHeight;
+    _streaminfo.y = debugHeight - _streaminfo.height;
   }
 }
 
