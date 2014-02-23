@@ -32,6 +32,7 @@ public class Main extends Sprite
   private var _video:Video;
   private var _overlay:VideoOverlay;
   private var _playing:Boolean;
+  private var _paused:Boolean;
   private var _buffull:Boolean;
 
   // Main()
@@ -157,57 +158,17 @@ public class Main extends Sprite
     _control.show();
   }
 
-  private function onOverlayClick(e:MouseEvent):void 
-  {  
-    var overlay:VideoOverlay = VideoOverlay(e.target);
-    var playing:Boolean = !_playing;
-    overlay.show(playing);
-    setPlayState(playing);
-  }
-
-  private function onPlayPauseClick(e:Event):void
-  {
-    var button:PlayPauseButton = PlayPauseButton(e.target);
-    if (!button.busy) {
-      setPlayState(button.toPlay);
-    }
-  }
-
-  private function _updateVolume(slider:VolumeSlider):void
-  {
-    if (_stream != null) {
-      var transform:SoundTransform = 
-	new SoundTransform((slider.muted)? 0 : slider.value);
-      _stream.soundTransform = transform;
-    }
-  }
-
-  private function onVolumeSliderClick(e:Event):void
-  {
-    var slider:VolumeSlider = VolumeSlider(e.target);
-    slider.muted = !slider.muted;
-    _updateVolume(slider);
-  }
-  
-  private function onVolumeSliderChanged(e:Event):void
-  {
-    var slider:VolumeSlider = VolumeSlider(e.target);
-    _updateVolume(slider);
-  }
-
-  private function onFullscreenClick(e:Event):void
-  {
-    var button:FullscreenButton = FullscreenButton(e.target);
-    stage.displayState = ((button.toFullscreen)? 
-			  StageDisplayState.FULL_SCREEN : 
-			  StageDisplayState.NORMAL);
-    button.toFullscreen = !button.toFullscreen;
-  }
-
   private function onNetStatusEvent(ev:NetStatusEvent):void
   {
     log("onNetStatusEvent: "+expandAttrs(ev.info));
     switch (ev.info.code) {
+    case "NetConnection.Connect.Failed":
+    case "NetConnection.Connect.Rejected":
+    case "NetConnection.Connect.InvalidApp":
+      _control.autohide = false;
+      _control.status.text = "Failed";
+      break;
+      
     case "NetConnection.Connect.Success":
       var nc:Netconnection = ev.target;
       _stream = new NetStream(nc);
@@ -224,11 +185,11 @@ public class Main extends Sprite
       _updateVolume(_control.volumeSlider);
       _control.autohide = false;
       _control.status.text = "Connected";
-      play();
+      startPlaying();
       break;
 
     case "NetConnection.Connect.Closed":
-      stop();
+      stopPlaying();
       _video.attachNetStream(null);
       _stream.removeEventListener(NetStatusEvent.NET_STATUS, onNetStatusEvent);
       _stream.removeEventListener(AsyncErrorEvent.ASYNC_ERROR, onAsyncErrorEvent);
@@ -238,18 +199,10 @@ public class Main extends Sprite
       _control.status.text = "Disconnected";
       break;
 
-    case "NetConnection.Connect.Failed":
-    case "NetConnection.Connect.Rejected":
-    case "NetConnection.Connect.InvalidApp":
-      _control.autohide = false;
-      _control.status.text = "Failed";
-      break;
-      
     case "NetStream.Play.Start":
       _playing = true;
       _buffull = false;
       _control.autohide = false;
-      _control.playButton.busy = false;
       _control.playButton.toPlay = false;
       _control.status.text = "Buffering...";
       break;
@@ -259,9 +212,17 @@ public class Main extends Sprite
       _playing = false;
       _buffull = false;
       _control.autohide = false;
-      _control.playButton.busy = false;
       _control.playButton.toPlay = true;
       _control.status.text = "Stopped";
+      break;
+
+    case "NetStream.Pause.Notify":
+      _paused = true;
+      _control.status.text = "Paused";
+      break;
+
+    case "NetStream.Unpause.Notify":
+      _paused = false;
       break;
 
     case "NetStream.Buffer.Empty":
@@ -277,6 +238,11 @@ public class Main extends Sprite
 	_control.autohide = true;
 	_control.status.text = "Playing";
       }
+      break;
+    case "NetStream.Buffer.Flush":
+      _buffull = false;
+      _control.autohide = true;
+      _control.status.text = "Stopped";
       break;
     }
   }
@@ -315,20 +281,19 @@ public class Main extends Sprite
     }
   }
 
-  private function play():void
+  private function startPlaying():void
   {
     if (_params.streamPath != null && !_playing) {
       log("Playing: "+_params.streamPath);
-      _control.playButton.busy = true;
       _control.status.text = "Starting...";
       _stream.play(_params.streamPath);
     }
   }
 
-  private function stop():void
+  private function stopPlaying():void
   {
     if (_playing) {
-      _control.playButton.busy = true;
+      log("Stopping");
       _control.status.text = "Stopping...";
       _stream.close();
     }
@@ -336,15 +301,67 @@ public class Main extends Sprite
 
   private function setPlayState(playing:Boolean):void
   {
+    log("setPlayState: "+playing);
     if (playing) {
-      if (_connection.connected) {
-	play();
+      if (_paused) {
+	_stream.resume();
+      } else if (_playing) {
+
+      } else if (_connection.connected) {
+	startPlaying();
       } else {
 	connect();
       }
     } else {
-      stop();
+      if (_playing) {
+	_stream.pause();
+      }
     }
+  }
+
+  private function onOverlayClick(e:MouseEvent):void 
+  {  
+    var overlay:VideoOverlay = VideoOverlay(e.target);
+    var playing:Boolean = !_playing;
+    overlay.show(playing);
+    setPlayState(playing);
+  }
+
+  private function onPlayPauseClick(e:Event):void
+  {
+    var button:PlayPauseButton = PlayPauseButton(e.target);
+    setPlayState(button.toPlay);
+  }
+
+  private function _updateVolume(slider:VolumeSlider):void
+  {
+    if (_stream != null) {
+      var transform:SoundTransform = 
+	new SoundTransform((slider.muted)? 0 : slider.value);
+      _stream.soundTransform = transform;
+    }
+  }
+
+  private function onVolumeSliderClick(e:Event):void
+  {
+    var slider:VolumeSlider = VolumeSlider(e.target);
+    slider.muted = !slider.muted;
+    _updateVolume(slider);
+  }
+  
+  private function onVolumeSliderChanged(e:Event):void
+  {
+    var slider:VolumeSlider = VolumeSlider(e.target);
+    _updateVolume(slider);
+  }
+
+  private function onFullscreenClick(e:Event):void
+  {
+    var button:FullscreenButton = FullscreenButton(e.target);
+    stage.displayState = ((button.toFullscreen)? 
+			  StageDisplayState.FULL_SCREEN : 
+			  StageDisplayState.NORMAL);
+    button.toFullscreen = !button.toFullscreen;
   }
 
 }
@@ -810,17 +827,6 @@ class PlayPauseButton extends Button
     super(w, h);
   }
 
-  private var _busy:Boolean = false;
-  public function get busy():Boolean
-  {
-    return _busy;
-  }
-  public function set busy(value:Boolean):void
-  {
-    _busy = value;
-    update();
-  }
-
   private var _toPlay:Boolean = false;
   public function get toPlay():Boolean
   {
@@ -840,9 +846,7 @@ class PlayPauseButton extends Button
     var cx:int = controlWidth/2 + ((pressed)? 2 : 0);
     var cy:int = controlHeight/2 + ((pressed)? 2 : 0);
 
-    if (_busy) {
-      
-    } else if (_toPlay) {
+    if (_toPlay) {
       graphics.beginFill(color, (color>>>24)/255);
       graphics.moveTo(cx-size*4, cy-size*4);
       graphics.lineTo(cx-size*4, cy+size*4);
