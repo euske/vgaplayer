@@ -358,6 +358,7 @@ import flash.text.TextFieldAutoSize;
 import flash.net.NetStream;
 import flash.net.NetStreamInfo;
 import flash.ui.Keyboard;
+import flash.utils.getTimer;
 
 class VideoOverlay extends Sprite
 {
@@ -387,7 +388,6 @@ class ControlBar extends Sprite
 
   public const alphaDelta:Number = 0.1;
   private var _margin:int;
-  private var _limit:int;
 
   public function ControlBar(width:int, size:int, margin:int=8, fullscreen:Boolean=false)
   {
@@ -422,6 +422,7 @@ class ControlBar extends Sprite
   }
 
   private var _autohide:Boolean;
+  private var _timeout:int;
   public function get autohide():Boolean
   {
     return _autohide;
@@ -429,9 +430,7 @@ class ControlBar extends Sprite
   public function set autohide(value:Boolean):void
   {
     _autohide = value;
-    if (!_autohide) {
-      alpha = 1.0;
-    }
+    show();
   }
 
   public function resize():void
@@ -456,18 +455,19 @@ class ControlBar extends Sprite
   public function update():void
   {
     if (_autohide) {
-      if (0 < _limit) {
-	_limit--;
-      } else {
+      var t:int = getTimer();
+      if (_timeout <= t) {
 	alpha = Math.max((alpha - alphaDelta), 0.0);
       }
+    } else {
+      alpha = 1.0;
     }
   }
 
-  public function show():void
+  public function show(duration:int=2000):void
   {
+    _timeout = getTimer()+duration;
     alpha = 1.0;
-    _limit = 48;
   }
 }
 
