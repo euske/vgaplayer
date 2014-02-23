@@ -59,7 +59,7 @@ public class Main extends Sprite
     addChild(_control);
 
     _overlay = new VideoOverlay(stage.stageWidth, stage.stageHeight-_control.height);
-    _overlay.addEventListener(MouseEvent.CLICK, onClick);
+    _overlay.addEventListener(MouseEvent.CLICK, onOverlayClick);
     addChild(_overlay);
 
     _debug = new DebugDisplay(_overlay.width, _overlay.height);
@@ -127,15 +127,11 @@ public class Main extends Sprite
 
   protected function onEnterFrame(e:Event):void
   {
+    _overlay.update();
     _control.update();
     if (debugMode && _stream != null) {
       _debug.update(_stream);
     }
-  }
-
-  protected function onClick(e:MouseEvent):void 
-  {  
-    setPlayState(!_playing);
   }
 
   protected function onKeyDown(e:KeyboardEvent):void 
@@ -158,6 +154,14 @@ public class Main extends Sprite
   protected function onMouseMove(e:MouseEvent):void 
   {
     _control.show();
+  }
+
+  private function onOverlayClick(e:MouseEvent):void 
+  {  
+    var overlay:VideoOverlay = VideoOverlay(e.target);
+    var playing:Boolean = !_playing;
+    overlay.show(playing);
+    setPlayState(playing);
   }
 
   private function onPlayPauseClick(e:Event):void
@@ -360,6 +364,15 @@ class VideoOverlay extends Sprite
     graphics.beginFill(0, 0);
     graphics.drawRect(0, 0, w, h);
     graphics.endFill();
+  }
+
+  public function show(playing:Boolean):void
+  {
+    
+  }
+
+  public function update():void
+  {
   }
 }
 
