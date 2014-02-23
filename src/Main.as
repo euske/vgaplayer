@@ -25,7 +25,7 @@ public class Main extends Sprite
 {
   private var _params:Params;
   private var _control:ControlBar;
-  private var _debug:DebugDisplay;
+  private var _debugdisp:DebugDisplay;
 
   private var _connection:NetConnection;
   private var _stream:NetStream;
@@ -62,7 +62,7 @@ public class Main extends Sprite
     _overlay.addEventListener(MouseEvent.CLICK, onOverlayClick);
     addChild(_overlay);
 
-    _debug = new DebugDisplay(_overlay.width, _overlay.height);
+    _debugdisp = new DebugDisplay(_overlay.width, _overlay.height);
     debugMode = _params.debug;
 
     stage.addEventListener(Event.ENTER_FRAME, onEnterFrame);
@@ -102,7 +102,7 @@ public class Main extends Sprite
       if (x.length != 0) x += " ";
       x += a;
     }
-    _debug.log(x);
+    _debugdisp.log(x);
     trace(x);
   }
 
@@ -114,14 +114,14 @@ public class Main extends Sprite
   
   public function get debugMode():Boolean
   {
-    return _overlay.contains(_debug);
+    return _overlay.contains(_debugdisp);
   }
   public function set debugMode(value:Boolean):void
   {
-    if (value && !_overlay.contains(_debug)) {
-      _overlay.addChild(_debug);
-    } else if (!value && _overlay.contains(_debug)) {
-      _overlay.removeChild(_debug);
+    if (value && !_overlay.contains(_debugdisp)) {
+      _overlay.addChild(_debugdisp);
+    } else if (!value && _overlay.contains(_debugdisp)) {
+      _overlay.removeChild(_debugdisp);
     }
     log("debugMode: "+value);
   }
@@ -131,7 +131,7 @@ public class Main extends Sprite
     _overlay.update();
     _control.update();
     if (debugMode && _stream != null) {
-      _debug.update(_stream);
+      _debugdisp.update(_stream);
     }
   }
 
@@ -220,10 +220,22 @@ public class Main extends Sprite
       _stream.bufferTime = _params.bufferTime;
       _stream.bufferTimeMax = _params.bufferTimeMax;
       _stream.maxPauseBufferTime = _params.maxPauseBufferTime;
+      _video.attachNetStream(_stream);
       _updateVolume(_control.volumeSlider);
       _control.autohide = false;
       _control.status.text = "Connected";
       play();
+      break;
+
+    case "NetConnection.Connect.Closed":
+      stop();
+      _video.attachNetStream(null);
+      _stream.removeEventListener(NetStatusEvent.NET_STATUS, onNetStatusEvent);
+      _stream.removeEventListener(AsyncErrorEvent.ASYNC_ERROR, onAsyncErrorEvent);
+      _stream.client = null;
+      _stream = null;
+      _control.autohide = false;
+      _control.status.text = "Disconnected";
       break;
 
     case "NetConnection.Connect.Failed":
@@ -231,13 +243,6 @@ public class Main extends Sprite
     case "NetConnection.Connect.InvalidApp":
       _control.autohide = false;
       _control.status.text = "Failed";
-      break;
-
-    case "NetConnection.Connect.Closed":
-      stop();
-      _stream = null;
-      _control.autohide = false;
-      _control.status.text = "Disconnected";
       break;
       
     case "NetStream.Play.Start":
@@ -317,7 +322,6 @@ public class Main extends Sprite
       _control.playButton.busy = true;
       _control.status.text = "Starting...";
       _stream.play(_params.streamPath);
-      _video.attachNetStream(_stream);
     }
   }
 
@@ -326,7 +330,6 @@ public class Main extends Sprite
     if (_playing) {
       _control.playButton.busy = true;
       _control.status.text = "Stopping...";
-      _video.attachNetStream(null);
       _stream.close();
     }
   }
@@ -472,49 +475,49 @@ class ControlBar extends Sprite
 
 class DebugDisplay extends Sprite
 {
-  private var logger:TextField;
-  private var overlay:TextField;
-  private var infotext:TextField;
-
   public var debugWidth:int;
   public var debugHeight:int;
+
+  private var _logger:TextField;
+  private var _playstat:TextField;
+  private var _streaminfo:TextField;
 
   public function DebugDisplay(w:int, h:int)
   {
     debugWidth = w;
     debugHeight = h;
 
-    logger = new TextField();
-    logger.multiline = true;
-    logger.wordWrap = true;
-    logger.border = true;
-    logger.width = 400;
-    logger.height = 100;
-    logger.background = true;
-    logger.type = TextFieldType.DYNAMIC;
-    addChild(logger);
+    _logger = new TextField();
+    _logger.multiline = true;
+    _logger.wordWrap = true;
+    _logger.border = true;
+    _logger.width = 400;
+    _logger.height = 100;
+    _logger.background = true;
+    _logger.type = TextFieldType.DYNAMIC;
+    addChild(_logger);
 
-    overlay = new TextField();
-    overlay.multiline = true;
-    overlay.width = 200;
-    overlay.height = 100;
-    overlay.textColor = 0xffffff;
-    overlay.type = TextFieldType.DYNAMIC;
-    addChild(overlay);
+    _playstat = new TextField();
+    _playstat.multiline = true;
+    _playstat.width = 200;
+    _playstat.height = 100;
+    _playstat.textColor = 0xffffff;
+    _playstat.type = TextFieldType.DYNAMIC;
+    addChild(_playstat);
 
-    infotext = new TextField();
-    infotext.multiline = true;
-    infotext.width = 200;
-    infotext.height = 200;
-    infotext.textColor = 0xffff00;
-    infotext.type = TextFieldType.DYNAMIC;
-    addChild(infotext);
+    _streaminfo = new TextField();
+    _streaminfo.multiline = true;
+    _streaminfo.width = 200;
+    _streaminfo.height = 200;
+    _streaminfo.textColor = 0xffff00;
+    _streaminfo.type = TextFieldType.DYNAMIC;
+    addChild(_streaminfo);
   }
 
   public function log(x:String):void
   {
-    logger.appendText(x+"\n");
-    logger.scrollV = logger.maxScrollV;
+    _logger.appendText(x+"\n");
+    _logger.scrollV = _logger.maxScrollV;
   }
 
   public function update(stream:NetStream):void
@@ -525,9 +528,9 @@ class DebugDisplay extends Sprite
 	    "backBufferLength: "+stream.backBufferLength+"\n"+
 	    "currentFPS: "+Math.floor(stream.currentFPS)+"\n"+
 	    "liveDelay: "+stream.liveDelay+"\n");
-    overlay.text = text;
-    overlay.x = debugWidth - overlay.width;
-    overlay.y = debugHeight - overlay.textHeight;
+    _playstat.text = text;
+    _playstat.x = debugWidth - _playstat.width;
+    _playstat.y = debugHeight - _playstat.textHeight;
 
     var info:NetStreamInfo = stream.info;
     text = ("isLive: "+info.isLive+"\n"+
@@ -540,9 +543,9 @@ class DebugDisplay extends Sprite
 	    "videoBytesPerSecond: "+Math.floor(info.videoBytesPerSecond)+"\n"+
 	    "playbackBytesPerSecond: "+Math.floor(info.playbackBytesPerSecond)+"\n"+
 	    "droppedFrames: "+info.droppedFrames+"\n");
-    infotext.text = text;
-    infotext.x = 0;
-    infotext.y = debugHeight - infotext.textHeight;
+    _streaminfo.text = text;
+    _streaminfo.x = 0;
+    _streaminfo.y = debugHeight - _streaminfo.textHeight;
   }
 }
 
