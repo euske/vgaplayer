@@ -39,7 +39,7 @@ $(TARGET_DEBUG): .$(SEP)src$(SEP)*.as
 		-o $@ .$(SEP)src$(SEP)Main.as
 
 # testing
-LIVE_URL=live.tabesugi.net:public/file/live.tabesugi.net/
+LIVE_URL=tabesugi:public/file/sbt.tabesugi.net/live/
 CONTENTS=$(TARGET) index.html
 update: $(CONTENTS)
 	$(RSYNC) $(CONTENTS) $(LIVE_URL)
