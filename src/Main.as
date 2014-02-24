@@ -31,7 +31,7 @@ public class Main extends Sprite
   private var _stream:NetStream;
   private var _video:Video;
   private var _overlay:VideoOverlay;
-  private var _playing:Boolean;
+  private var _started:Boolean;
 
   // Main()
   public function Main()
@@ -142,7 +142,7 @@ public class Main extends Sprite
       debugMode = !debugMode;
       break;
     case Keyboard.SPACE:
-      setPlayState(!_playing);
+      setPlayState(!_started);
       break;
     }
   }
@@ -183,13 +183,13 @@ public class Main extends Sprite
       _updateVolume(_control.volumeSlider);
       _control.autohide = false;
       _control.status.text = "Connected";
-      _playing = false;
+      _started = false;
       startPlaying();
       break;
 
     case "NetConnection.Connect.Closed":
       stopPlaying();
-      _playing = false;
+      _started = false;
       _video.attachNetStream(null);
       _stream.removeEventListener(NetStatusEvent.NET_STATUS, onNetStatusEvent);
       _stream.removeEventListener(AsyncErrorEvent.ASYNC_ERROR, onAsyncErrorEvent);
@@ -200,7 +200,7 @@ public class Main extends Sprite
       break;
 
     case "NetStream.Play.Start":
-      _playing = true;
+      _started = true;
       _control.autohide = false;
       _control.playButton.toPlay = false;
       _control.status.text = "Buffering...";
@@ -209,23 +209,20 @@ public class Main extends Sprite
     case "NetStream.Play.Stop":
     case "NetStream.Play.Complete":
     case "NetStream.Buffer.Flush":
-      _playing = false;
+      _started = false;
       _control.autohide = false;
       _control.playButton.toPlay = true;
       _control.status.text = "Stopped";
       break;
 
     case "NetStream.Buffer.Empty":
-      if (_playing) {
-	_control.autohide = false;
-	_control.status.text = "Buffering...";
-      }
+      _control.autohide = false;
+      _control.status.text = "Buffering...";
       break;
     case "NetStream.Buffer.Full":
-      if (_playing) {
-	_control.autohide = true;
-	_control.status.text = "Playing";
-      }
+      _started = true;
+      _control.autohide = true;
+      _control.status.text = "Playing";
       break;
     }
   }
@@ -266,7 +263,7 @@ public class Main extends Sprite
 
   private function startPlaying():void
   {
-    if (_params.streamPath != null && !_playing) {
+    if (_stream != null && _params.streamPath != null) {
       log("Playing: "+_params.streamPath);
       _control.status.text = "Starting...";
       _stream.play(_params.streamPath);
@@ -275,7 +272,7 @@ public class Main extends Sprite
 
   private function stopPlaying():void
   {
-    if (_playing) {
+    if (_stream != null && _params.streamPath != null) {
       log("Stopping");
       _control.status.text = "Stopping...";
       _stream.close();
@@ -286,7 +283,7 @@ public class Main extends Sprite
   {
     log("setPlayState: "+playing);
     if (playing) {
-      if (_playing) {
+      if (_started) {
 
       } else if (_connection.connected) {
 	startPlaying();
@@ -294,7 +291,7 @@ public class Main extends Sprite
 	connect();
       }
     } else {
-      if (_playing) {
+      if (_started) {
 	stopPlaying();
       }
     }
@@ -303,7 +300,7 @@ public class Main extends Sprite
   private function onOverlayClick(e:MouseEvent):void 
   {  
     var overlay:VideoOverlay = VideoOverlay(e.target);
-    var playing:Boolean = !_playing;
+    var playing:Boolean = !_started;
     overlay.show(playing);
     setPlayState(playing);
   }
