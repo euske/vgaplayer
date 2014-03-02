@@ -7,6 +7,8 @@ import flash.display.Sprite;
 import flash.display.DisplayObject;
 import flash.display.LoaderInfo;
 import flash.display.StageDisplayState;
+import flash.display.StageScaleMode;
+import flash.display.StageAlign;
 import flash.events.Event;
 import flash.events.KeyboardEvent;
 import flash.events.MouseEvent;
@@ -17,6 +19,7 @@ import flash.media.SoundTransform;
 import flash.net.NetConnection;
 import flash.net.NetStream;
 import flash.ui.Keyboard;
+import flash.geom.Point;
 
 //  Main 
 //
@@ -24,12 +27,13 @@ import flash.ui.Keyboard;
 public class Main extends Sprite
 {
   private var _params:Params;
+  private var _video:Video;
   private var _control:ControlBar;
   private var _debugdisp:DebugDisplay;
 
   private var _connection:NetConnection;
   private var _stream:NetStream;
-  private var _video:Video;
+  private var _videosize:Point;
   private var _overlay:VideoOverlay;
   private var _started:Boolean;
 
@@ -39,15 +43,21 @@ public class Main extends Sprite
     var info:LoaderInfo = LoaderInfo(this.root.loaderInfo);
     _params = new Params(info.loaderURL, info.parameters);
 
-    _connection = new NetConnection();
-    _connection.addEventListener(NetStatusEvent.NET_STATUS, onNetStatusEvent);
-    _connection.addEventListener(AsyncErrorEvent.ASYNC_ERROR, onAsyncErrorEvent);
+    stage.scaleMode = StageScaleMode.NO_SCALE;
+    stage.align = StageAlign.TOP_LEFT;
+    stage.addEventListener(Event.RESIZE, onResize);
+    stage.addEventListener(Event.ENTER_FRAME, onEnterFrame);
+    stage.addEventListener(MouseEvent.MOUSE_MOVE, onMouseMove);
+    stage.addEventListener(KeyboardEvent.KEY_DOWN, onKeyDown);
 
     _video = new Video();
     addChild(_video);
 
-    _control = new ControlBar(stage.stageWidth, 20, 4, _params.fullscreen);
-    _control.y = stage.stageHeight-_control.height;
+    _overlay = new VideoOverlay();
+    _overlay.addEventListener(MouseEvent.CLICK, onOverlayClick);
+    addChild(_overlay);
+
+    _control = new ControlBar(_params.fullscreen);
     _control.playButton.addEventListener(MouseEvent.CLICK, onPlayPauseClick);
     _control.volumeSlider.addEventListener(Slider.CLICK, onVolumeSliderClick);
     _control.volumeSlider.addEventListener(Slider.CHANGED, onVolumeSliderChanged);
@@ -56,18 +66,9 @@ public class Main extends Sprite
       _control.fsButton.addEventListener(MouseEvent.CLICK, onFullscreenClick);
     }
     addChild(_control);
-
-    _overlay = new VideoOverlay(stage.stageWidth, stage.stageHeight-_control.height);
-    _overlay.addEventListener(MouseEvent.CLICK, onOverlayClick);
-    addChild(_overlay);
-
-    _debugdisp = new DebugDisplay(_overlay.width, _overlay.height);
-    debugMode = _params.debug;
-
-    stage.addEventListener(Event.ENTER_FRAME, onEnterFrame);
-    stage.addEventListener(KeyboardEvent.KEY_DOWN, onKeyDown);
-    stage.addEventListener(KeyboardEvent.KEY_UP, onKeyUp);
-    stage.addEventListener(MouseEvent.MOUSE_MOVE, onMouseMove);
+    
+    _debugdisp = new DebugDisplay();
+    addChild(_debugdisp);
 
     log("FlashVars: "+expandAttrs(info.parameters));
     log("debug: "+_params.debug);
@@ -76,7 +77,12 @@ public class Main extends Sprite
     log("bufferTime: "+_params.bufferTime);
     log("bufferTimeMax: "+_params.bufferTimeMax);
     log("maxPauseBufferTime: "+_params.maxPauseBufferTime);
+    debugMode = _params.debug;
+    resize();
 
+    _connection = new NetConnection();
+    _connection.addEventListener(NetStatusEvent.NET_STATUS, onNetStatusEvent);
+    _connection.addEventListener(AsyncErrorEvent.ASYNC_ERROR, onAsyncErrorEvent);
     connect();
   }
 
@@ -101,16 +107,10 @@ public class Main extends Sprite
       if (x.length != 0) x += " ";
       x += a;
     }
-    _debugdisp.log(x);
+    _debugdisp.writeLine(x);
     trace(x);
   }
 
-  private function setCenter(obj:DisplayObject):void
-  {
-    obj.x = (stage.stageWidth - obj.width)/2;
-    obj.y = (stage.stageHeight - obj.height)/2;
-  }
-  
   public function get debugMode():Boolean
   {
     return _overlay.contains(_debugdisp);
@@ -125,13 +125,19 @@ public class Main extends Sprite
     log("debugMode: "+value);
   }
 
+  protected function onResize(e:Event):void
+  {
+    resize();
+  }
+
   protected function onEnterFrame(e:Event):void
   {
-    _overlay.update();
-    _control.update();
-    if (debugMode && _stream != null) {
-      _debugdisp.update(_stream);
-    }
+    update();
+  }
+
+  protected function onMouseMove(e:MouseEvent):void 
+  {
+    _control.show();
   }
 
   protected function onKeyDown(e:KeyboardEvent):void 
@@ -145,15 +151,6 @@ public class Main extends Sprite
       setPlayState(!_started);
       break;
     }
-  }
-
-  protected function onKeyUp(e:KeyboardEvent):void 
-  {
-  }
-
-  protected function onMouseMove(e:MouseEvent):void 
-  {
-    _control.show();
   }
 
   private function onNetStatusEvent(ev:NetStatusEvent):void
@@ -230,11 +227,8 @@ public class Main extends Sprite
   private function onMetaData(info:Object):void
   {
     log("onMetaData: "+expandAttrs(info));
-    var r:Number = Math.min((stage.stageWidth / info.width),
-			    (stage.stageHeight / info.height));
-    _video.width = info.width*r;
-    _video.height = info.height*r;
-    setCenter(_video);
+    _videosize = new Point(info.width, info.height);
+    resize();
   }
 
   private function onCuePoint(info:Object):void
@@ -250,51 +244,6 @@ public class Main extends Sprite
   private function onAsyncErrorEvent(ev:AsyncErrorEvent):void
   {
     log("onAsyncErrorEvent: "+ev.error);
-  }
-
-  private function connect():void
-  {
-    if (_params.rtmpURL != null && !_connection.connected) {
-      log("Connecting: "+_params.rtmpURL);
-      _control.status.text = "Connecting...";
-      _connection.connect(_params.rtmpURL);
-    }
-  }
-
-  private function startPlaying():void
-  {
-    if (_stream != null && _params.streamPath != null) {
-      log("Playing: "+_params.streamPath);
-      _control.status.text = "Starting...";
-      _stream.play(_params.streamPath);
-    }
-  }
-
-  private function stopPlaying():void
-  {
-    if (_stream != null && _params.streamPath != null) {
-      log("Stopping");
-      _control.status.text = "Stopping...";
-      _stream.close();
-    }
-  }
-
-  private function setPlayState(playing:Boolean):void
-  {
-    log("setPlayState: "+playing);
-    if (playing) {
-      if (_started) {
-
-      } else if (_connection.connected) {
-	startPlaying();
-      } else {
-	connect();
-      }
-    } else {
-      if (_started) {
-	stopPlaying();
-      }
-    }
   }
 
   private function onOverlayClick(e:MouseEvent):void 
@@ -342,6 +291,88 @@ public class Main extends Sprite
     button.toFullscreen = !button.toFullscreen;
   }
 
+  public function connect():void
+  {
+    if (_params.rtmpURL != null && !_connection.connected) {
+      log("Connecting: "+_params.rtmpURL);
+      _control.status.text = "Connecting...";
+      _connection.connect(_params.rtmpURL);
+    }
+  }
+
+  public function startPlaying():void
+  {
+    if (_stream != null && _params.streamPath != null) {
+      log("Playing: "+_params.streamPath);
+      _control.status.text = "Starting...";
+      _stream.play(_params.streamPath);
+    }
+  }
+
+  public function stopPlaying():void
+  {
+    if (_stream != null && _params.streamPath != null) {
+      log("Stopping");
+      _control.status.text = "Stopping...";
+      _stream.close();
+    }
+  }
+
+  public function setPlayState(playing:Boolean):void
+  {
+    log("setPlayState: "+playing);
+    if (playing) {
+      if (_started) {
+
+      } else if (_connection.connected) {
+	startPlaying();
+      } else {
+	connect();
+      }
+    } else {
+      if (_started) {
+	stopPlaying();
+      }
+    }
+  }
+
+  public function resize():void
+  {
+    log("resize: "+stage.stageWidth+","+stage.stageHeight);
+    x = 0;
+    y = 0;
+
+    if (_videosize != null) {
+      var r:Number = Math.min((stage.stageWidth / _videosize.x),
+			      (stage.stageHeight / _videosize.y));
+      _video.width = _videosize.x*r;
+      _video.height = _videosize.y*r;
+      _video.x = (stage.stageWidth - _video.width)/2;
+      _video.y = (stage.stageHeight - _video.height)/2;
+    }
+
+    _control.resize(stage.stageWidth, 28);
+    _control.x = 0;
+    _control.y = stage.stageHeight-_control.height;
+
+    _overlay.resize(stage.stageWidth, stage.stageHeight);
+    _overlay.x = 0;
+    _overlay.y = 0;
+
+    _debugdisp.resize(stage.stageWidth, stage.stageHeight-_control.height);
+    _debugdisp.x = 0;
+    _debugdisp.y = 0;
+  }
+
+  public function update():void
+  {
+    _overlay.update();
+    _control.update();
+    if (debugMode && _stream != null) {
+      _debugdisp.update(_stream);
+    }
+  }
+
 }
 
 } // package
@@ -359,11 +390,8 @@ import flash.utils.getTimer;
 
 class VideoOverlay extends Sprite
 {
-  public function VideoOverlay(w:int, h:int)
+  public function VideoOverlay()
   {
-    graphics.beginFill(0, 0);
-    graphics.drawRect(0, 0, w, h);
-    graphics.endFill();
   }
 
   public function show(playing:Boolean):void
@@ -371,6 +399,14 @@ class VideoOverlay extends Sprite
     
   }
 
+  public function resize(w:int, h:int):void
+  {
+    graphics.clear();
+    graphics.beginFill(0, 0);
+    graphics.drawRect(0, 0, w, h);
+    graphics.endFill();
+  }
+  
   public function update():void
   {
   }
@@ -386,36 +422,25 @@ class ControlBar extends Sprite
   public const alphaDelta:Number = 0.1;
   private var _margin:int;
 
-  public function ControlBar(width:int, size:int, margin:int=8, fullscreen:Boolean=false)
+  public function ControlBar(fullscreen:Boolean=false, margin:int=4)
   {
-    graphics.beginFill(0, 0.5);
-    graphics.drawRect(0, 0, width, size+margin*2);
-    graphics.endFill();
-
     _margin = margin;
 
-    playButton = new PlayPauseButton(size, size);
+    playButton = new PlayPauseButton();
     playButton.toPlay = true;
     addChild(playButton);
 
-    volumeSlider = new VolumeSlider(size*2, size);
+    volumeSlider = new VolumeSlider();
     volumeSlider.value = 1.0;
     addChild(volumeSlider);
 
     if (fullscreen) {
-      fsButton = new FullscreenButton(size, size);
+      fsButton = new FullscreenButton();
       addChild(fsButton);
     }
 
-    var w:int = width;
-    w -= (_margin+playButton.width+_margin+volumeSlider.width);
-    if (fsButton != null) {
-      w -= (_margin+fsButton.width);
-    }
-    status = new StatusDisplay(w-margin*2, size);
+    status = new StatusDisplay();
     addChild(status);
-
-    resize();
   }
 
   private var _autohide:Boolean;
@@ -430,22 +455,33 @@ class ControlBar extends Sprite
     show();
   }
 
-  public function resize():void
+  public function resize(w:int, h:int):void
   {
+    var size:int = h-_margin*2;
+
+    graphics.clear();
+    graphics.beginFill(0, 0.5);
+    graphics.drawRect(0, 0, w, h);
+    graphics.endFill();
+
+    playButton.resize(size, size);
     playButton.x = _margin;
     playButton.y = _margin;
 
-    volumeSlider.x = playButton.x+playButton.controlWidth+_margin;
+    volumeSlider.resize(size*2, size);
+    volumeSlider.x = playButton.x+playButton.width+_margin;
     volumeSlider.y = _margin;
 
     var x:int = width;
     if (fsButton != null) {
-      x -= fsButton.controlWidth + _margin;
-      fsButton.x = x;
+      fsButton.resize(size, size);
+      w -= fsButton.width + _margin;
+      fsButton.x = w;
       fsButton.y = _margin;
     }
 
-    status.x = volumeSlider.x+volumeSlider.controlWidth+_margin;
+    status.resize(w-_margin*2-(volumeSlider.x+volumeSlider.width), size);
+    status.x = volumeSlider.x+volumeSlider.width+_margin;
     status.y = _margin;
   }
 
@@ -470,18 +506,12 @@ class ControlBar extends Sprite
 
 class DebugDisplay extends Sprite
 {
-  public var debugWidth:int;
-  public var debugHeight:int;
-
   private var _logger:TextField;
   private var _playstat:TextField;
   private var _streaminfo:TextField;
 
-  public function DebugDisplay(w:int, h:int)
+  public function DebugDisplay()
   {
-    debugWidth = w;
-    debugHeight = h;
-
     _logger = new TextField();
     _logger.multiline = true;
     _logger.wordWrap = true;
@@ -509,12 +539,20 @@ class DebugDisplay extends Sprite
     addChild(_streaminfo);
   }
 
-  public function log(x:String):void
+  public function writeLine(x:String):void
   {
     _logger.appendText(x+"\n");
     _logger.scrollV = _logger.maxScrollV;
   }
 
+  public function resize(w:int, h:int):void
+  {
+    _playstat.x = w - _playstat.width;
+    _playstat.y = h - _playstat.height;
+    _streaminfo.x = 0;
+    _streaminfo.y = h - _streaminfo.height;
+  }
+  
   public function update(stream:NetStream):void
   {
     var text:String;
@@ -524,8 +562,6 @@ class DebugDisplay extends Sprite
 	    "currentFPS: "+Math.floor(stream.currentFPS)+"\n"+
 	    "liveDelay: "+stream.liveDelay+"\n");
     _playstat.text = text;
-    _playstat.x = debugWidth - _playstat.width;
-    _playstat.y = debugHeight - _playstat.height;
 
     var info:NetStreamInfo = stream.info;
     text = ("isLive: "+info.isLive+"\n"+
@@ -539,8 +575,6 @@ class DebugDisplay extends Sprite
 	    "playbackBytesPerSecond: "+Math.floor(info.playbackBytesPerSecond)+"\n"+
 	    "droppedFrames: "+info.droppedFrames+"\n");
     _streaminfo.text = text;
-    _streaminfo.x = 0;
-    _streaminfo.y = debugHeight - _streaminfo.height;
   }
 }
 
@@ -551,16 +585,11 @@ class Control extends Sprite
   public var fgColorHi:uint = 0xffeeeeee;
   public var borderColor:uint = 0x88ffffff;
 
-  public var controlWidth:int;
-  public var controlHeight:int;
-
-  public function Control(w:int, h:int)
+  public function Control()
   {
     addEventListener(Event.ADDED_TO_STAGE, onAdded);
     addEventListener(MouseEvent.MOUSE_OVER, onMouseOver);
     addEventListener(MouseEvent.MOUSE_OUT, onMouseOut);
-    controlWidth = w;
-    controlHeight = h;
   }
 
   private var _mousedown:Boolean;
@@ -580,7 +609,6 @@ class Control extends Sprite
   {
     stage.addEventListener(MouseEvent.MOUSE_DOWN, onMouseDown);
     stage.addEventListener(MouseEvent.MOUSE_UP, onMouseUp);
-    update();
   }
 
   protected virtual function onMouseDown(e:MouseEvent):void 
@@ -611,29 +639,33 @@ class Control extends Sprite
     update();
   }
 
+  private var _width:int;
+  private var _height:int;
+  public virtual function resize(w:int, h:int):void
+  {
+    _width = w;
+    _height = h;
+    update();
+  }
+
   public virtual function update():void
   {
     graphics.clear();
     graphics.beginFill(bgColor, (bgColor>>>24)/255);
-    graphics.drawRect(0, 0, controlWidth, controlHeight);
+    graphics.drawRect(0, 0, _width, _height);
     graphics.endFill();
   }
 }
 
 class Button extends Control
 {
-  public function Button(w:int, h:int)
-  {
-    super(w, h);
-  }
-
   public override function update():void
   {
     super.update();
 
     if (highlit) {
       graphics.lineStyle(0, borderColor, (borderColor>>>24)/255);
-      graphics.drawRect(0, 0, controlWidth, controlHeight);
+      graphics.drawRect(0, 0, width, height);
     }
   }
 }
@@ -644,11 +676,6 @@ class Slider extends Control
   public static const CHANGED:String = "Slider.Changed";
 
   public var minDelta:int = 4;
-
-  public function Slider(w:int, h:int)
-  {
-    super(w, h);
-  }
 
   private var _x0:int;
   private var _y0:int;
@@ -694,11 +721,6 @@ class VolumeSlider extends Slider
 {
   public var muteColor:uint = 0xffff0000;
 
-  public function VolumeSlider(w:int, h:int)
-  {
-    super(w, h);
-  }
-
   private var _value:Number = 0;
   public function get value():Number
   {
@@ -727,46 +749,41 @@ class VolumeSlider extends Slider
   
   protected override function onMouseDrag(e:MouseEvent):void 
   {
-    var size:int = Math.min(controlWidth, controlHeight)/8;
-    var w:int = (controlWidth-size*2);
+    var size:int = Math.min(width, height)/8;
+    var w:int = (width-size*2);
     value = (e.localX-size)/w;
   }
 
   public override function update():void
   {
-    var size:int = Math.min(controlWidth, controlHeight)/4;
-    var color:uint = (highlit)? fgColorHi : fgColor;
     super.update();
+    var size:int = Math.min(width, height)/4;
+    var color:uint = (highlit)? fgColorHi : fgColor;
 
     graphics.lineStyle(0, color, (color>>>24)/255);
-    graphics.moveTo(size, controlHeight-size);
-    graphics.lineTo(controlWidth-size, size);
-    graphics.lineTo(controlWidth-size, controlHeight-size);
-    graphics.lineTo(size, controlHeight-size);
+    graphics.moveTo(size, height-size);
+    graphics.lineTo(width-size, size);
+    graphics.lineTo(width-size, height-size);
+    graphics.lineTo(size, height-size);
 
-    var w:int = (controlWidth-size*2);
-    var h:int = (controlHeight-size*2);
+    var w:int = (width-size*2);
+    var h:int = (height-size*2);
     graphics.beginFill(color, (color>>>24)/255);
-    graphics.moveTo(size, controlHeight-size);
-    graphics.lineTo(size+_value*w, controlHeight-size-_value*h);
-    graphics.lineTo(size+_value*w, controlHeight-size);
+    graphics.moveTo(size, height-size);
+    graphics.lineTo(size+_value*w, height-size-_value*h);
+    graphics.lineTo(size+_value*w, height-size);
     graphics.endFill();
 
     if (_muted) {
       graphics.lineStyle(2, muteColor, (muteColor>>>24)/255);
-      graphics.moveTo(controlWidth/2-size, controlHeight/2-size);
-      graphics.lineTo(controlWidth/2+size, controlHeight/2+size);
+      graphics.moveTo(width/2-size, height/2-size);
+      graphics.lineTo(width/2+size, height/2+size);
     }
   }
 }
 
 class FullscreenButton extends Button
 {
-  public function FullscreenButton(w:int, h:int)
-  {
-    super(w, h);
-  }
-
   private var _toFullscreen:Boolean = false;
   public function get toFullscreen():Boolean
   {
@@ -781,10 +798,10 @@ class FullscreenButton extends Button
   public override function update():void
   {
     super.update();
-    var size:int = Math.min(controlWidth, controlHeight)/16;
+    var size:int = Math.min(width, height)/16;
     var color:uint = (highlit)? fgColorHi : fgColor;
-    var cx:int = controlWidth/2 + ((pressed)? 2 : 0);
-    var cy:int = controlHeight/2 + ((pressed)? 2 : 0);
+    var cx:int = width/2 + ((pressed)? 2 : 0);
+    var cy:int = height/2 + ((pressed)? 2 : 0);
 
     if (_toFullscreen) {
       graphics.beginFill(color, (color>>>24)/255);
@@ -800,11 +817,6 @@ class FullscreenButton extends Button
 
 class PlayPauseButton extends Button
 {
-  public function PlayPauseButton(w:int, h:int)
-  {
-    super(w, h);
-  }
-
   private var _toPlay:Boolean = false;
   public function get toPlay():Boolean
   {
@@ -819,10 +831,10 @@ class PlayPauseButton extends Button
   public override function update():void
   {
     super.update();
-    var size:int = Math.min(controlWidth, controlHeight)/16;
+    var size:int = Math.min(width, height)/16;
     var color:uint = (highlit)? fgColorHi : fgColor;
-    var cx:int = controlWidth/2 + ((pressed)? 2 : 0);
-    var cy:int = controlHeight/2 + ((pressed)? 2 : 0);
+    var cx:int = width/2 + ((pressed)? 2 : 0);
+    var cy:int = height/2 + ((pressed)? 2 : 0);
 
     if (_toPlay) {
       graphics.beginFill(color, (color>>>24)/255);
@@ -843,12 +855,9 @@ class StatusDisplay extends Control
 {
   private var _text:TextField;
 
-  public function StatusDisplay(w:int, h:int)
+  public function StatusDisplay()
   {
-    super(w, h);
     _text = new TextField();
-    _text.width = w;
-    _text.height = h;
     _text.selectable = false;
     addChild(_text);
   }
@@ -860,6 +869,13 @@ class StatusDisplay extends Control
   public function set text(value:String):void
   {
     _text.text = value;
+  }
+
+  public override function resize(w:int, h:int):void
+  {
+    super.resize(w, h);
+    _text.width = w;
+    _text.height = h;
   }
 
   public override function update():void
