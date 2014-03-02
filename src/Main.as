@@ -112,14 +112,14 @@ public class Main extends Sprite
 
   public function get debugMode():Boolean
   {
-    return _overlay.contains(_debugdisp);
+    return contains(_debugdisp);
   }
   public function set debugMode(value:Boolean):void
   {
-    if (value && !_overlay.contains(_debugdisp)) {
-      _overlay.addChild(_debugdisp);
-    } else if (!value && _overlay.contains(_debugdisp)) {
-      _overlay.removeChild(_debugdisp);
+    if (value && !contains(_debugdisp)) {
+      addChild(_debugdisp);
+    } else if (!value && contains(_debugdisp)) {
+      removeChild(_debugdisp);
     }
     log("debugMode: "+value);
   }
@@ -350,13 +350,13 @@ public class Main extends Sprite
       _video.y = (stage.stageHeight - _video.height)/2;
     }
 
-    _control.resize(stage.stageWidth, 28);
-    _control.x = 0;
-    _control.y = stage.stageHeight-_control.height;
-
     _overlay.resize(stage.stageWidth, stage.stageHeight);
     _overlay.x = 0;
     _overlay.y = 0;
+
+    _control.resize(stage.stageWidth, 28);
+    _control.x = 0;
+    _control.y = stage.stageHeight-_control.height;
 
     _debugdisp.resize(stage.stageWidth, stage.stageHeight-_control.height);
     _debugdisp.x = 0;
@@ -389,25 +389,66 @@ import flash.utils.getTimer;
 
 class VideoOverlay extends Sprite
 {
-  public function VideoOverlay()
+  public const alphaDelta:Number = 0.05;
+  public var bgColor:uint = 0x448888ff;
+  public var fgColor:uint = 0xcc888888;
+
+  public function VideoOverlay(size:int=100)
   {
+    _size = size;
+    alpha = 0;
   }
 
-  public function show(playing:Boolean):void
-  {
-    
-  }
+  private var _size:int;
+  private var _width:int;
+  private var _height:int;
 
   public function resize(w:int, h:int):void
   {
-    graphics.clear();
-    graphics.beginFill(0, 0);
-    graphics.drawRect(0, 0, w, h);
-    graphics.endFill();
+    _width = w;
+    _height = h;
+    repaint();
+  }
+  
+  private var _playing:Boolean;
+  public function show(playing:Boolean):void
+  {
+    _playing = playing;
+    alpha = 1.0;
+    repaint();
   }
   
   public function update():void
   {
+    alpha = Math.max((alpha - alphaDelta), 0.0);
+  }
+
+  public function repaint():void
+  {
+    graphics.clear();
+    graphics.beginFill(0, 0);
+    graphics.drawRect(0, 0, _width, _height);
+    graphics.endFill();
+
+    var size:int = _size/16;
+    var cx:int = width/2;
+    var cy:int = height/2;
+
+    graphics.beginFill(bgColor, (bgColor>>>24)/255);
+    graphics.drawRect(cx-_size/2, cy-_size/2, _size, _size);
+    graphics.endFill();
+    if (_playing) {
+      graphics.beginFill(fgColor, (fgColor>>>24)/255);
+      graphics.moveTo(cx-size*4, cy-size*4);
+      graphics.lineTo(cx-size*4, cy+size*4);
+      graphics.lineTo(cx+size*4, cy);
+      graphics.endFill();
+    } else {
+      graphics.beginFill(fgColor, (fgColor>>>24)/255);
+      graphics.drawRect(cx-size*3, cy-size*4, size*2, size*8);
+      graphics.drawRect(cx+size*1, cy-size*4, size*2, size*8);
+      graphics.endFill();
+    }
   }
 }
 
@@ -614,7 +655,7 @@ class Control extends Sprite
   {
     if (_mouseover) {
       _mousedown = true;
-      update();
+      repaint();
     }
   }
 
@@ -622,45 +663,51 @@ class Control extends Sprite
   {
     if (_mousedown) {
       _mousedown = false;
-      update();
+      repaint();
     }
   }
 
   protected virtual function onMouseOver(e:MouseEvent):void 
   {
     _mouseover = true;
-    update();
+    repaint();
   }
 
   protected virtual function onMouseOut(e:MouseEvent):void 
   {
     _mouseover = false;
-    update();
+    repaint();
   }
 
   private var _width:int;
   private var _height:int;
+
   public virtual function resize(w:int, h:int):void
   {
     _width = w;
     _height = h;
-    update();
+    repaint();
   }
 
-  public virtual function update():void
+  public virtual function repaint():void
   {
     graphics.clear();
     graphics.beginFill(bgColor, (bgColor>>>24)/255);
     graphics.drawRect(0, 0, _width, _height);
     graphics.endFill();
   }
+
+  public virtual function update():void
+  {
+    repaint();
+  }
 }
 
 class Button extends Control
 {
-  public override function update():void
+  public override function repaint():void
   {
-    super.update();
+    super.repaint();
 
     if (highlit) {
       graphics.lineStyle(0, borderColor, (borderColor>>>24)/255);
@@ -730,7 +777,7 @@ class VolumeSlider extends Slider
     v = Math.max(0, Math.min(1, v));
     if (_value != v) {
       _value = v;
-      update();
+      repaint();
       dispatchEvent(new Event(CHANGED));
     }
   }
@@ -743,7 +790,7 @@ class VolumeSlider extends Slider
   public function set muted(value:Boolean):void
   {
     _muted = value;
-    update();
+    repaint();
   }
   
   protected override function onMouseDrag(e:MouseEvent):void 
@@ -753,11 +800,13 @@ class VolumeSlider extends Slider
     value = (e.localX-size)/w;
   }
 
-  public override function update():void
+  public override function repaint():void
   {
-    super.update();
+    super.repaint();
     var size:int = Math.min(width, height)/4;
     var color:uint = (highlit)? fgColorHi : fgColor;
+    var cx:int = width/2;
+    var cy:int = height/2;
 
     graphics.lineStyle(0, color, (color>>>24)/255);
     graphics.moveTo(size, height-size);
@@ -775,8 +824,8 @@ class VolumeSlider extends Slider
 
     if (_muted) {
       graphics.lineStyle(2, muteColor, (muteColor>>>24)/255);
-      graphics.moveTo(width/2-size, height/2-size);
-      graphics.lineTo(width/2+size, height/2+size);
+      graphics.moveTo(cx-size, cy-size);
+      graphics.lineTo(cx+size, cy+size);
     }
   }
 }
@@ -791,12 +840,12 @@ class FullscreenButton extends Button
   public function set toFullscreen(value:Boolean):void
   {
     _toFullscreen = value;
-    update();
+    repaint();
   }
 
-  public override function update():void
+  public override function repaint():void
   {
-    super.update();
+    super.repaint();
     var size:int = Math.min(width, height)/16;
     var color:uint = (highlit)? fgColorHi : fgColor;
     var cx:int = width/2 + ((pressed)? 2 : 0);
@@ -824,12 +873,12 @@ class PlayPauseButton extends Button
   public function set toPlay(value:Boolean):void
   {
     _toPlay = value;
-    update();
+    repaint();
   }
 
-  public override function update():void
+  public override function repaint():void
   {
-    super.update();
+    super.repaint();
     var size:int = Math.min(width, height)/16;
     var color:uint = (highlit)? fgColorHi : fgColor;
     var cx:int = width/2 + ((pressed)? 2 : 0);
@@ -877,9 +926,9 @@ class StatusDisplay extends Control
     _text.height = h;
   }
 
-  public override function update():void
+  public override function repaint():void
   {
-    super.update();
+    super.repaint();
     var color:uint = (highlit)? fgColorHi : fgColor;
     _text.textColor = color;
   }
