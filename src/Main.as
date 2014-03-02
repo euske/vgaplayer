@@ -68,7 +68,7 @@ public class Main extends Sprite
     addChild(_control);
     
     _debugdisp = new DebugDisplay();
-    addChild(_debugdisp);
+    debugMode = _params.debug;
 
     log("FlashVars: "+expandAttrs(info.parameters));
     log("debug: "+_params.debug);
@@ -77,7 +77,6 @@ public class Main extends Sprite
     log("bufferTime: "+_params.bufferTime);
     log("bufferTimeMax: "+_params.bufferTimeMax);
     log("maxPauseBufferTime: "+_params.maxPauseBufferTime);
-    debugMode = _params.debug;
     resize();
 
     _connection = new NetConnection();
