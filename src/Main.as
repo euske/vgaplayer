@@ -535,6 +535,11 @@ class ControlBar extends Sprite
     } else {
       alpha = 1.0;
     }
+    playButton.update();
+    volumeSlider.update();
+    if (fsButton != null) {
+      fsButton.update();
+    }
   }
 
   public function show(duration:int=2000):void
@@ -634,6 +639,7 @@ class Control extends Sprite
 
   private var _mousedown:Boolean;
   private var _mouseover:Boolean;
+  private var _invalidated:Boolean;
 
   public function get pressed():Boolean
   {
@@ -655,7 +661,7 @@ class Control extends Sprite
   {
     if (_mouseover) {
       _mousedown = true;
-      repaint();
+      _invalidated = true;
     }
   }
 
@@ -663,20 +669,20 @@ class Control extends Sprite
   {
     if (_mousedown) {
       _mousedown = false;
-      repaint();
+      _invalidated = true;
     }
   }
 
   protected virtual function onMouseOver(e:MouseEvent):void 
   {
     _mouseover = true;
-    repaint();
+    _invalidated = true;
   }
 
   protected virtual function onMouseOut(e:MouseEvent):void 
   {
     _mouseover = false;
-    repaint();
+    _invalidated = true;
   }
 
   private var _width:int;
@@ -699,7 +705,15 @@ class Control extends Sprite
 
   public virtual function update():void
   {
-    repaint();
+    if (_invalidated) {
+      _invalidated = false;
+      repaint();
+    }
+  }
+
+  public function invalidate():void
+  {
+    _invalidated = true;
   }
 }
 
@@ -777,7 +791,7 @@ class VolumeSlider extends Slider
     v = Math.max(0, Math.min(1, v));
     if (_value != v) {
       _value = v;
-      repaint();
+      invalidate();
       dispatchEvent(new Event(CHANGED));
     }
   }
@@ -790,7 +804,7 @@ class VolumeSlider extends Slider
   public function set muted(value:Boolean):void
   {
     _muted = value;
-    repaint();
+    invalidate();
   }
   
   protected override function onMouseDrag(e:MouseEvent):void 
@@ -840,7 +854,7 @@ class FullscreenButton extends Button
   public function set toFullscreen(value:Boolean):void
   {
     _toFullscreen = value;
-    repaint();
+    invalidate();
   }
 
   public override function repaint():void
@@ -848,8 +862,8 @@ class FullscreenButton extends Button
     super.repaint();
     var size:int = Math.min(width, height)/16;
     var color:uint = (highlit)? fgColorHi : fgColor;
-    var cx:int = width/2 + ((pressed)? 2 : 0);
-    var cy:int = height/2 + ((pressed)? 2 : 0);
+    var cx:int = width/2 + ((pressed)? 1 : 0);
+    var cy:int = height/2 + ((pressed)? 1 : 0);
 
     if (_toFullscreen) {
       graphics.beginFill(color, (color>>>24)/255);
@@ -873,7 +887,7 @@ class PlayPauseButton extends Button
   public function set toPlay(value:Boolean):void
   {
     _toPlay = value;
-    repaint();
+    invalidate();
   }
 
   public override function repaint():void
@@ -881,8 +895,8 @@ class PlayPauseButton extends Button
     super.repaint();
     var size:int = Math.min(width, height)/16;
     var color:uint = (highlit)? fgColorHi : fgColor;
-    var cx:int = width/2 + ((pressed)? 2 : 0);
-    var cy:int = height/2 + ((pressed)? 2 : 0);
+    var cx:int = width/2 + ((pressed)? 1 : 0);
+    var cy:int = height/2 + ((pressed)? 1 : 0);
 
     if (_toPlay) {
       graphics.beginFill(color, (color>>>24)/255);
