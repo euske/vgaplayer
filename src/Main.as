@@ -42,7 +42,8 @@ public class Main extends Sprite
   {
     var info:LoaderInfo = LoaderInfo(this.root.loaderInfo);
     _params = new Params(info.loaderURL, info.parameters);
-
+    
+    stage.color = _params.bgColor;
     stage.scaleMode = StageScaleMode.NO_SCALE;
     stage.align = StageAlign.TOP_LEFT;
     stage.addEventListener(Event.RESIZE, onResize);
@@ -54,14 +55,30 @@ public class Main extends Sprite
     addChild(_video);
 
     _overlay = new VideoOverlay();
+    _overlay.buttonBgColor = _params.buttonBgColor;
+    _overlay.buttonFgColor = _params.buttonFgColor;
     _overlay.addEventListener(MouseEvent.CLICK, onOverlayClick);
     addChild(_overlay);
 
     _control = new ControlBar(_params.fullscreen);
+    _control.status.bgColor = _params.buttonBgColor;
+    _control.status.fgColor = _params.buttonFgColor;
+    _control.status.hiColor = _params.buttonHiColor;
+    _control.playButton.bgColor = _params.buttonBgColor;
+    _control.playButton.fgColor = _params.buttonFgColor;
+    _control.playButton.hiColor = _params.buttonHiColor;
+    _control.playButton.borderColor = _params.buttonBorderColor;
     _control.playButton.addEventListener(MouseEvent.CLICK, onPlayPauseClick);
+    _control.volumeSlider.bgColor = _params.buttonBgColor;
+    _control.volumeSlider.fgColor = _params.buttonFgColor;
+    _control.volumeSlider.hiColor = _params.buttonHiColor;
     _control.volumeSlider.addEventListener(Slider.CLICK, onVolumeSliderClick);
     _control.volumeSlider.addEventListener(Slider.CHANGED, onVolumeSliderChanged);
     if (_control.fsButton != null) {
+      _control.fsButton.bgColor = _params.buttonBgColor;
+      _control.fsButton.fgColor = _params.buttonFgColor;
+      _control.fsButton.hiColor = _params.buttonHiColor;
+      _control.fsButton.borderColor = _params.buttonBorderColor;
       _control.fsButton.toFullscreen = (stage.displayState == StageDisplayState.NORMAL);
       _control.fsButton.addEventListener(MouseEvent.CLICK, onFullscreenClick);
     }
@@ -390,8 +407,8 @@ import flash.utils.getTimer;
 class VideoOverlay extends Sprite
 {
   public const alphaDelta:Number = 0.05;
-  public var bgColor:uint = 0x448888ff;
-  public var fgColor:uint = 0xcc888888;
+  public var buttonBgColor:uint = 0x448888ff;
+  public var buttonFgColor:uint = 0xcc888888;
 
   public function VideoOverlay(size:int=100)
   {
@@ -434,17 +451,17 @@ class VideoOverlay extends Sprite
     var cx:int = width/2;
     var cy:int = height/2;
 
-    graphics.beginFill(bgColor, (bgColor>>>24)/255);
+    graphics.beginFill(buttonBgColor, (buttonBgColor>>>24)/255);
     graphics.drawRect(cx-_size/2, cy-_size/2, _size, _size);
     graphics.endFill();
     if (_playing) {
-      graphics.beginFill(fgColor, (fgColor>>>24)/255);
+      graphics.beginFill(buttonFgColor, (buttonFgColor>>>24)/255);
       graphics.moveTo(cx-size*4, cy-size*4);
       graphics.lineTo(cx-size*4, cy+size*4);
       graphics.lineTo(cx+size*4, cy);
       graphics.endFill();
     } else {
-      graphics.beginFill(fgColor, (fgColor>>>24)/255);
+      graphics.beginFill(buttonFgColor, (buttonFgColor>>>24)/255);
       graphics.drawRect(cx-size*3, cy-size*4, size*2, size*8);
       graphics.drawRect(cx+size*1, cy-size*4, size*2, size*8);
       graphics.endFill();
@@ -535,6 +552,7 @@ class ControlBar extends Sprite
     } else {
       alpha = 1.0;
     }
+    status.update();
     playButton.update();
     volumeSlider.update();
     if (fsButton != null) {
@@ -627,7 +645,7 @@ class Control extends Sprite
 {
   public var bgColor:uint = 0x448888ff;
   public var fgColor:uint = 0xcc888888;
-  public var fgColorHi:uint = 0xffeeeeee;
+  public var hiColor:uint = 0xffeeeeee;
   public var borderColor:uint = 0x88ffffff;
 
   public function Control()
@@ -818,7 +836,7 @@ class VolumeSlider extends Slider
   {
     super.repaint();
     var size:int = Math.min(width, height)/4;
-    var color:uint = (highlit)? fgColorHi : fgColor;
+    var color:uint = (highlit)? hiColor : fgColor;
     var cx:int = width/2;
     var cy:int = height/2;
 
@@ -861,7 +879,7 @@ class FullscreenButton extends Button
   {
     super.repaint();
     var size:int = Math.min(width, height)/16;
-    var color:uint = (highlit)? fgColorHi : fgColor;
+    var color:uint = (highlit)? hiColor : fgColor;
     var cx:int = width/2 + ((pressed)? 1 : 0);
     var cy:int = height/2 + ((pressed)? 1 : 0);
 
@@ -894,7 +912,7 @@ class PlayPauseButton extends Button
   {
     super.repaint();
     var size:int = Math.min(width, height)/16;
-    var color:uint = (highlit)? fgColorHi : fgColor;
+    var color:uint = (highlit)? hiColor : fgColor;
     var cx:int = width/2 + ((pressed)? 1 : 0);
     var cy:int = height/2 + ((pressed)? 1 : 0);
 
@@ -943,7 +961,7 @@ class StatusDisplay extends Control
   public override function repaint():void
   {
     super.repaint();
-    var color:uint = (highlit)? fgColorHi : fgColor;
+    var color:uint = (highlit)? hiColor : fgColor;
     _text.textColor = color;
   }
 }
@@ -955,9 +973,16 @@ class Params
   public var bufferTime:Number = 1.0;
   public var bufferTimeMax:Number = 1.0;
   public var maxPauseBufferTime:Number = 30.0;
+  public var fullscreen:Boolean = false;
   public var rtmpURL:String = null;
   public var streamPath:String = null;
-  public var fullscreen:Boolean = false;
+
+  public var bgColor:uint = 0x000000;
+  public var buttonBgColor:uint = 0x448888ff;
+  public var buttonFgColor:uint = 0xcc888888;
+  public var buttonHiColor:uint = 0xffeeeeee;
+  public var buttonBorderColor:uint = 0x88ffffff;
+  public var volumeMutedColor:uint = 0xffff0000;
 
   public function Params(baseurl:String, obj:Object)
   {
@@ -967,6 +992,10 @@ class Params
       // debug
       if (obj.debug) {
 	debug = (parseInt(obj.debug) != 0);
+      }
+      // url
+      if (obj.url) {
+	url = obj.url;
       }
       // bufferTime
       if (obj.bufferTime) {
@@ -986,9 +1015,30 @@ class Params
       if (obj.fullscreen) {
 	fullscreen = (parseInt(obj.fullscreen) != 0);
       }
-      // url
-      if (obj.url) {
-	url = obj.url;
+
+      // bgColor
+      if (obj.bgColor) {
+	bgColor = parseColor(obj.bgColor);
+      }
+      // buttonBgColor
+      if (obj.buttonBgColor) {
+	buttonBgColor = parseColor(obj.buttonBgColor);
+      }
+      // buttonFgColor
+      if (obj.buttonFgColor) {
+	buttonFgColor = parseColor(obj.buttonFgColor);
+      }
+      // buttonHiColor
+      if (obj.buttonHiColor) {
+	buttonHiColor = parseColor(obj.buttonHiColor);
+      }
+      // buttonBorderColor
+      if (obj.buttonBorderColor) {
+	buttonBorderColor = parseColor(obj.buttonBorderColor);
+      }
+      // volumeMutedColor
+      if (obj.volumeMutedColor) {
+	volumeMutedColor = parseColor(obj.volumeMutedColor);
       }
     }
 
@@ -1009,5 +1059,13 @@ class Params
       rtmpURL = url.substr(0, i);
       streamPath = url.substr(i+1);
     }
+  }
+
+  private function parseColor(v:String):uint
+  {
+    if (v.substr(0, 1) == "#") {
+      v = v.substr(1);
+    }
+    return parseInt(v, 16);
   }
 }
