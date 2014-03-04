@@ -5,13 +5,13 @@ It's an open source viewer for Adobe Flash Media Server streaming (RTMP stream).
 
 Typical usage:
 
-   &lt;embed src="play.swf" width="100%" height="99%" 
-	 play="true" 
-	 allowScriptAccess="sameDomain"
-	 allowFullScreen="true"
-	 type="application/x-shockwave-flash"
-	 FlashVars="url=rtmp://rtmp.example.com&amp;fullscreen=1"
-	 pluginspage="http://www.adobe.com/go/getflashplayer" /&gt;
+    <embed src="play.swf" width="100%" height="99%" 
+         play="true" 
+         allowScriptAccess="sameDomain"
+         allowFullScreen="true"
+         type="application/x-shockwave-flash"
+         FlashVars="url=rtmp://rtmp.example.com&amp;fullscreen=1"
+         pluginspage="http://www.adobe.com/go/getflashplayer" />
 
 FlashVars Parameters:
 
@@ -20,12 +20,12 @@ FlashVars Parameters:
   * fullscreen: Indicates if the fullscreen button is shown. (1: on, 0: off)
   * bufferTime: Stream buffering time. (default: 1.0 sec)
   * bufferTimeMax: Maximum stream buffering time. (default: 1.0 sec)
-  * bgColor: Background color.
-  * buttonBgColor: Button background color.
-  * buttonFgColor: Button foreground color.
-  * buttonHiColor: Button highlighting color.
-  * buttonBorderColor: Button border color.
-  * volumeMutedColor: Color used when the volume is muted.
+  * bgColor: Background color. (default: "#000000")
+  * buttonBgColor: Button background color. The upper 8 bits are for alpha. (default: "#448888ff")
+  * buttonFgColor: Button foreground color. (default: "#cc888888")
+  * buttonHiColor: Button highlighting color. (default: "#ffeeeeee")
+  * buttonBorderColor: Button border color. (default: "#88ffffff")
+  * volumeMutedColor: Color used when the volume is muted. (default: "#ffff0000")
 
 Terms and Conditions
 --------------------
