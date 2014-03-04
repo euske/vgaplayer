@@ -1,4 +1,4 @@
-// VGAPlayer
+//  VGAPlayer
 //
 
 package {
@@ -23,18 +23,17 @@ import flash.geom.Point;
 
 //  Main 
 //
-[SWF(backgroundColor="#000000")]
 public class Main extends Sprite
 {
   private var _params:Params;
   private var _video:Video;
+  private var _overlay:VideoOverlay;
   private var _control:ControlBar;
   private var _debugdisp:DebugDisplay;
 
   private var _connection:NetConnection;
   private var _stream:NetStream;
   private var _videosize:Point;
-  private var _overlay:VideoOverlay;
   private var _started:Boolean;
 
   // Main()
@@ -85,21 +84,33 @@ public class Main extends Sprite
     addChild(_control);
     
     _debugdisp = new DebugDisplay();
-    debugMode = _params.debug;
+    _debugdisp.visible = _params.debug;
+    addChild(_debugdisp);
 
-    log("FlashVars: "+expandAttrs(info.parameters));
-    log("debug: "+_params.debug);
-    log("url: "+_params.url);
-    log("fullscreen: "+_params.fullscreen);
-    log("bufferTime: "+_params.bufferTime);
-    log("bufferTimeMax: "+_params.bufferTimeMax);
-    log("maxPauseBufferTime: "+_params.maxPauseBufferTime);
     resize();
+
+    log("FlashVars:", expandAttrs(info.parameters));
+    log("url:", _params.url);
+    log("fullscreen:", _params.fullscreen);
+    log("bufferTime:", _params.bufferTime);
+    log("bufferTimeMax:", _params.bufferTimeMax);
+    log("maxPauseBufferTime:", _params.maxPauseBufferTime);
 
     _connection = new NetConnection();
     _connection.addEventListener(NetStatusEvent.NET_STATUS, onNetStatusEvent);
     _connection.addEventListener(AsyncErrorEvent.ASYNC_ERROR, onAsyncErrorEvent);
     connect();
+  }
+
+  private function log(... args):void
+  {
+    var x:String = "";
+    for each (var a:Object in args) {
+      if (x.length != 0) x += " ";
+      x += a;
+    }
+    _debugdisp.writeLine(x);
+    trace(x);
   }
 
   private function expandAttrs(obj:Object):String
@@ -116,52 +127,27 @@ public class Main extends Sprite
     return x;
   }
 
-  private function log(... args):void
-  {
-    var x:String = "";
-    for each (var a:Object in args) {
-      if (x.length != 0) x += " ";
-      x += a;
-    }
-    _debugdisp.writeLine(x);
-    trace(x);
-  }
-
-  public function get debugMode():Boolean
-  {
-    return contains(_debugdisp);
-  }
-  public function set debugMode(value:Boolean):void
-  {
-    if (value && !contains(_debugdisp)) {
-      addChild(_debugdisp);
-    } else if (!value && contains(_debugdisp)) {
-      removeChild(_debugdisp);
-    }
-    log("debugMode: "+value);
-  }
-
-  protected function onResize(e:Event):void
+  private function onResize(e:Event):void
   {
     resize();
   }
 
-  protected function onEnterFrame(e:Event):void
+  private function onEnterFrame(e:Event):void
   {
     update();
   }
 
-  protected function onMouseMove(e:MouseEvent):void 
+  private function onMouseMove(e:MouseEvent):void 
   {
     _control.show();
   }
 
-  protected function onKeyDown(e:KeyboardEvent):void 
+  private function onKeyDown(e:KeyboardEvent):void 
   {
     switch (e.keyCode) {
     case Keyboard.ESCAPE:	// Esc
     case 68:			// D
-      debugMode = !debugMode;
+      _debugdisp.visible = !_debugdisp.visible;
       break;
     case Keyboard.SPACE:
       setPlayState(!_started);
@@ -171,7 +157,7 @@ public class Main extends Sprite
 
   private function onNetStatusEvent(ev:NetStatusEvent):void
   {
-    log("onNetStatusEvent: "+expandAttrs(ev.info));
+    log("onNetStatusEvent:", expandAttrs(ev.info));
     switch (ev.info.code) {
     case "NetConnection.Connect.Failed":
     case "NetConnection.Connect.Rejected":
@@ -242,24 +228,24 @@ public class Main extends Sprite
 
   private function onMetaData(info:Object):void
   {
-    log("onMetaData: "+expandAttrs(info));
+    log("onMetaData:", expandAttrs(info));
     _videosize = new Point(info.width, info.height);
     resize();
   }
 
   private function onCuePoint(info:Object):void
   {
-    log("onCuePoint: "+expandAttrs(info));
+    log("onCuePoint:", expandAttrs(info));
   }
 
   private function onPlayStatus(info:Object):void
   {
-    log("onPlayStatus: "+expandAttrs(info));
+    log("onPlayStatus:", expandAttrs(info));
   }
 
   private function onAsyncErrorEvent(ev:AsyncErrorEvent):void
   {
-    log("onAsyncErrorEvent: "+ev.error);
+    log("onAsyncErrorEvent:", ev.error);
   }
 
   private function onOverlayClick(e:MouseEvent):void 
@@ -310,7 +296,7 @@ public class Main extends Sprite
   public function connect():void
   {
     if (_params.rtmpURL != null && !_connection.connected) {
-      log("Connecting: "+_params.rtmpURL);
+      log("Connecting:", _params.rtmpURL);
       _control.status.text = "Connecting...";
       _connection.connect(_params.rtmpURL);
     }
@@ -319,7 +305,7 @@ public class Main extends Sprite
   public function startPlaying():void
   {
     if (_stream != null && _params.streamPath != null) {
-      log("Playing: "+_params.streamPath);
+      log("Playing:", _params.streamPath);
       _control.status.text = "Starting...";
       _stream.play(_params.streamPath);
     }
@@ -336,7 +322,7 @@ public class Main extends Sprite
 
   public function setPlayState(playing:Boolean):void
   {
-    log("setPlayState: "+playing);
+    log("setPlayState:", playing);
     if (playing) {
       if (_started) {
 
@@ -354,7 +340,7 @@ public class Main extends Sprite
 
   public function resize():void
   {
-    log("resize: "+stage.stageWidth+","+stage.stageHeight);
+    log("resize:", stage.stageWidth+","+stage.stageHeight);
     x = 0;
     y = 0;
 
@@ -384,7 +370,7 @@ public class Main extends Sprite
   {
     _overlay.update();
     _control.update();
-    if (debugMode && _stream != null) {
+    if (_debugdisp.visible && _stream != null) {
       _debugdisp.update(_stream);
     }
   }
@@ -406,19 +392,20 @@ import flash.utils.getTimer;
 
 class VideoOverlay extends Sprite
 {
-  public const alphaDelta:Number = 0.05;
+  public var alphaDelta:Number = 0.05;
   public var buttonBgColor:uint = 0x448888ff;
   public var buttonFgColor:uint = 0xcc888888;
+
+  private var _size:int;
+  private var _width:int;
+  private var _height:int;
+  private var _playing:Boolean;
 
   public function VideoOverlay(size:int=100)
   {
     _size = size;
     alpha = 0;
   }
-
-  private var _size:int;
-  private var _width:int;
-  private var _height:int;
 
   public function resize(w:int, h:int):void
   {
@@ -427,7 +414,6 @@ class VideoOverlay extends Sprite
     repaint();
   }
   
-  private var _playing:Boolean;
   public function show(playing:Boolean):void
   {
     _playing = playing;
@@ -471,13 +457,16 @@ class VideoOverlay extends Sprite
 
 class ControlBar extends Sprite
 {
+  public var alphaDelta:Number = 0.1;
+
   public var status:StatusDisplay;
   public var playButton:PlayPauseButton;
   public var volumeSlider:VolumeSlider;
   public var fsButton:FullscreenButton;
 
-  public const alphaDelta:Number = 0.1;
   private var _margin:int;
+  private var _autohide:Boolean;
+  private var _timeout:int;
 
   public function ControlBar(fullscreen:Boolean=false, margin:int=4)
   {
@@ -500,12 +489,11 @@ class ControlBar extends Sprite
     addChild(status);
   }
 
-  private var _autohide:Boolean;
-  private var _timeout:int;
   public function get autohide():Boolean
   {
     return _autohide;
   }
+
   public function set autohide(value:Boolean):void
   {
     _autohide = value;
@@ -648,16 +636,19 @@ class Control extends Sprite
   public var hiColor:uint = 0xffeeeeee;
   public var borderColor:uint = 0x88ffffff;
 
+  private var _width:int;
+  private var _height:int;
+
+  private var _mousedown:Boolean;
+  private var _mouseover:Boolean;
+  private var _invalidated:Boolean;
+
   public function Control()
   {
     addEventListener(Event.ADDED_TO_STAGE, onAdded);
     addEventListener(MouseEvent.MOUSE_OVER, onMouseOver);
     addEventListener(MouseEvent.MOUSE_OUT, onMouseOut);
   }
-
-  private var _mousedown:Boolean;
-  private var _mouseover:Boolean;
-  private var _invalidated:Boolean;
 
   public function get pressed():Boolean
   {
@@ -703,8 +694,10 @@ class Control extends Sprite
     _invalidated = true;
   }
 
-  private var _width:int;
-  private var _height:int;
+  protected function invalidate():void
+  {
+    _invalidated = true;
+  }
 
   public virtual function resize(w:int, h:int):void
   {
@@ -727,11 +720,6 @@ class Control extends Sprite
       _invalidated = false;
       repaint();
     }
-  }
-
-  public function invalidate():void
-  {
-    _invalidated = true;
   }
 }
 
@@ -792,7 +780,6 @@ class Slider extends Control
   protected virtual function onMouseDrag(e:MouseEvent):void
   {
   }
-
 }
 
 class VolumeSlider extends Slider
@@ -800,10 +787,20 @@ class VolumeSlider extends Slider
   public var muteColor:uint = 0xffff0000;
 
   private var _value:Number = 0;
+  private var _muted:Boolean = false;
+  
+  protected override function onMouseDrag(e:MouseEvent):void 
+  {
+    var size:int = Math.min(width, height)/8;
+    var w:int = (width-size*2);
+    value = (e.localX-size)/w;
+  }
+
   public function get value():Number
   {
     return _value;
   }
+
   public function set value(v:Number):void
   {
     v = Math.max(0, Math.min(1, v));
@@ -814,22 +811,15 @@ class VolumeSlider extends Slider
     }
   }
 
-  private var _muted:Boolean = false;
   public function get muted():Boolean
   {
     return _muted;
   }
+
   public function set muted(value:Boolean):void
   {
     _muted = value;
     invalidate();
-  }
-  
-  protected override function onMouseDrag(e:MouseEvent):void 
-  {
-    var size:int = Math.min(width, height)/8;
-    var w:int = (width-size*2);
-    value = (e.localX-size)/w;
   }
 
   public override function repaint():void
@@ -865,10 +855,12 @@ class VolumeSlider extends Slider
 class FullscreenButton extends Button
 {
   private var _toFullscreen:Boolean = false;
+
   public function get toFullscreen():Boolean
   {
     return _toFullscreen;
   }
+
   public function set toFullscreen(value:Boolean):void
   {
     _toFullscreen = value;
@@ -898,10 +890,12 @@ class FullscreenButton extends Button
 class PlayPauseButton extends Button
 {
   private var _toPlay:Boolean = false;
+
   public function get toPlay():Boolean
   {
     return _toPlay;
   }
+
   public function set toPlay(value:Boolean):void
   {
     _toPlay = value;
