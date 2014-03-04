@@ -5,13 +5,13 @@ It's an open source viewer for Adobe Flash Media Server streaming (RTMP stream).
 
 Typical usage:
 
-  <embed src="play.swf" width="100%" height="99%" 
+  &lt;embed src="play.swf" width="100%" height="99%" 
 	 play="true" 
 	 allowScriptAccess="sameDomain"
 	 allowFullScreen="true"
 	 type="application/x-shockwave-flash"
 	 FlashVars="url=http://rtmp.example.com&amp;fullscreen=1"
-	 pluginspage="http://www.adobe.com/go/getflashplayer" />
+	 pluginspage="http://www.adobe.com/go/getflashplayer" /&gt;
 
 FlashVars Parameters:
 
