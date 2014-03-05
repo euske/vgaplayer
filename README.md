@@ -15,6 +15,8 @@ Typical usage:
 
 FlashVars Parameters:
 
+  It takes a form of `FlashVars="name=value&amp;name=value&amp;..."`
+
   * url: RTMP URL. (e.g. "rtmp://example.com/live" or "/app/live")
   * debug: Indicates if the debug console is displayed. (1: on, 0: off)
   * fullscreen: Indicates if the fullscreen button is shown. (1: on, 0: off)
