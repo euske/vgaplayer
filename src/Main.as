@@ -392,7 +392,7 @@ import flash.utils.getTimer;
 
 class VideoOverlay extends Sprite
 {
-  public var alphaDelta:Number = 0.05;
+  public var fadeDuration:int = 2000;
   public var buttonBgColor:uint = 0x448888ff;
   public var buttonFgColor:uint = 0xcc888888;
 
@@ -400,10 +400,12 @@ class VideoOverlay extends Sprite
   private var _width:int;
   private var _height:int;
   private var _playing:Boolean;
+  private var _timeout:int;
 
   public function VideoOverlay(size:int=100)
   {
     _size = size;
+    _timeout = -fadeDuration;
     alpha = 0;
   }
 
@@ -417,13 +419,8 @@ class VideoOverlay extends Sprite
   public function show(playing:Boolean):void
   {
     _playing = playing;
-    alpha = 1.0;
+    _timeout = getTimer();
     repaint();
-  }
-  
-  public function update():void
-  {
-    alpha = Math.max((alpha - alphaDelta), 0.0);
   }
 
   public function repaint():void
@@ -453,11 +450,17 @@ class VideoOverlay extends Sprite
       graphics.endFill();
     }
   }
+  
+  public function update():void
+  {
+    var a:Number = (_timeout - getTimer())/fadeDuration + 1.0;
+    alpha = Math.min(Math.max(a, 0.0), 1.0);
+  }
 }
 
 class ControlBar extends Sprite
 {
-  public var alphaDelta:Number = 0.1;
+  public var fadeDuration:int = 1000;
 
   public var status:StatusDisplay;
   public var playButton:PlayPauseButton;
@@ -471,6 +474,7 @@ class ControlBar extends Sprite
   public function ControlBar(fullscreen:Boolean=false, margin:int=4)
   {
     _margin = margin;
+    _timeout = -fadeDuration;
 
     playButton = new PlayPauseButton();
     playButton.toPlay = true;
@@ -498,6 +502,11 @@ class ControlBar extends Sprite
   {
     _autohide = value;
     show();
+  }
+
+  public function show(duration:int=2000):void
+  {
+    _timeout = getTimer()+duration;
   }
 
   public function resize(w:int, h:int):void
@@ -533,10 +542,8 @@ class ControlBar extends Sprite
   public function update():void
   {
     if (_autohide) {
-      var t:int = getTimer();
-      if (_timeout <= t) {
-	alpha = Math.max((alpha - alphaDelta), 0.0);
-      }
+      var a:Number = (_timeout - getTimer())/fadeDuration + 1.0;
+      alpha = Math.min(Math.max(a, 0.0), 1.0);
     } else {
       alpha = 1.0;
     }
@@ -546,12 +553,6 @@ class ControlBar extends Sprite
     if (fsButton != null) {
       fsButton.update();
     }
-  }
-
-  public function show(duration:int=2000):void
-  {
-    _timeout = getTimer()+duration;
-    alpha = 1.0;
   }
 }
 
