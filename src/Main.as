@@ -721,7 +721,9 @@ class ControlBar extends Sprite
 
   public function resize(w:int, h:int):void
   {
-    var size:int = h-_margin*2;
+    var size:int = h - _margin*2;
+    var x0:int = _margin;
+    var x1:int = w - _margin;
 
     graphics.clear();
     graphics.beginFill(0, 0.5);
@@ -729,23 +731,24 @@ class ControlBar extends Sprite
     graphics.endFill();
 
     playButton.resize(size, size);
-    playButton.x = _margin;
+    playButton.x = x0;
     playButton.y = _margin;
+    x0 += playButton.width + _margin;
 
-    volumeSlider.resize(size*2, size);
-    volumeSlider.x = playButton.x+playButton.width+_margin;
-    volumeSlider.y = _margin;
-
-    var x:int = width;
     if (fsButton != null) {
       fsButton.resize(size, size);
-      w -= fsButton.width + _margin;
-      fsButton.x = w;
+      fsButton.x = x1 - fsButton.width;
       fsButton.y = _margin;
+      x1 = fsButton.x - _margin;
     }
-
-    status.resize(w-_margin*2-(volumeSlider.x+volumeSlider.width), size);
-    status.x = volumeSlider.x+volumeSlider.width+_margin;
+    
+    volumeSlider.resize(size*2, size);
+    volumeSlider.x = x1 - volumeSlider.width;
+    volumeSlider.y = _margin;
+    x1 = volumeSlider.x - _margin;
+    
+    status.resize(x1-x0, size);
+    status.x = x0;
     status.y = _margin;
   }
 
