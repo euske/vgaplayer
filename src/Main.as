@@ -539,7 +539,7 @@ class Control extends Sprite
   {
     return _mouseover || _mousedown;
   }
-
+  
   private function onAdded(e:Event):void 
   {
     stage.addEventListener(MouseEvent.MOUSE_DOWN, onMouseDown);
@@ -609,6 +609,11 @@ class Control extends Sprite
 //  
 class Button extends Control
 {
+  public function get buttonSize():int
+  {
+    return Math.min(width, height);
+  }
+
   public override function repaint():void
   {
     super.repaint();
@@ -624,7 +629,7 @@ class Button extends Control
 //  Slider
 //  Generic slider class.
 // 
-class Slider extends Control
+class Slider extends Button
 {
   public static const CLICK:String = "Slider.Click";
   public static const CHANGED:String = "Slider.Changed";
@@ -676,6 +681,7 @@ class Slider extends Control
 //
 class ControlBar extends Sprite
 {
+  public var margin:int = 4;
   public var fadeDuration:int = 1000;
 
   public var status:StatusDisplay;
@@ -683,13 +689,11 @@ class ControlBar extends Sprite
   public var volumeSlider:VolumeSlider;
   public var fsButton:FullscreenButton;
 
-  private var _margin:int;
   private var _autohide:Boolean;
   private var _timeout:int;
 
-  public function ControlBar(fullscreen:Boolean=false, margin:int=4)
+  public function ControlBar(fullscreen:Boolean=false)
   {
-    _margin = margin;
     _timeout = -fadeDuration;
 
     playButton = new PlayPauseButton();
@@ -727,9 +731,9 @@ class ControlBar extends Sprite
 
   public function resize(w:int, h:int):void
   {
-    var size:int = h - _margin*2;
-    var x0:int = _margin;
-    var x1:int = w - _margin;
+    var size:int = h - margin*2;
+    var x0:int = margin;
+    var x1:int = w - margin;
 
     graphics.clear();
     graphics.beginFill(0, 0.5);
@@ -738,24 +742,24 @@ class ControlBar extends Sprite
 
     playButton.resize(size, size);
     playButton.x = x0;
-    playButton.y = _margin;
-    x0 += playButton.width + _margin;
+    playButton.y = margin;
+    x0 += playButton.width + margin;
 
     if (fsButton != null) {
       fsButton.resize(size, size);
       fsButton.x = x1 - fsButton.width;
-      fsButton.y = _margin;
-      x1 = fsButton.x - _margin;
+      fsButton.y = margin;
+      x1 = fsButton.x - margin;
     }
     
     volumeSlider.resize(size*2, size);
     volumeSlider.x = x1 - volumeSlider.width;
-    volumeSlider.y = _margin;
-    x1 = volumeSlider.x - _margin;
+    volumeSlider.y = margin;
+    x1 = volumeSlider.x - margin;
     
     status.resize(x1-x0, size);
     status.x = x0;
-    status.y = _margin;
+    status.y = margin;
   }
 
   public function update():void
@@ -788,7 +792,7 @@ class VolumeSlider extends Slider
   
   protected override function onMouseDrag(e:MouseEvent):void 
   {
-    var size:int = Math.min(width, height)/8;
+    var size:int = buttonSize/8;
     var w:int = (width-size*2);
     value = (e.localX-size)/w;
   }
@@ -822,7 +826,7 @@ class VolumeSlider extends Slider
   public override function repaint():void
   {
     super.repaint();
-    var size:int = Math.min(width, height)/4;
+    var size:int = buttonSize/4;
     var color:uint = (highlit)? hiColor : fgColor;
     var cx:int = width/2;
     var cy:int = height/2;
@@ -871,7 +875,7 @@ class FullscreenButton extends Button
   public override function repaint():void
   {
     super.repaint();
-    var size:int = Math.min(width, height)/16;
+    var size:int = buttonSize/16;
     var color:uint = (highlit)? hiColor : fgColor;
     var cx:int = width/2 + ((pressed)? 1 : 0);
     var cy:int = height/2 + ((pressed)? 1 : 0);
@@ -910,7 +914,7 @@ class PlayPauseButton extends Button
   public override function repaint():void
   {
     super.repaint();
-    var size:int = Math.min(width, height)/16;
+    var size:int = buttonSize/16;
     var color:uint = (highlit)? hiColor : fgColor;
     var cx:int = width/2 + ((pressed)? 1 : 0);
     var cy:int = height/2 + ((pressed)? 1 : 0);
@@ -975,6 +979,7 @@ class StatusDisplay extends Control
 //
 class VideoOverlay extends Sprite
 {
+  public var buttonSize:int = 100;
   public var fadeDuration:int = 2000;
   public var buttonBgColor:uint = 0x448888ff;
   public var buttonFgColor:uint = 0xcc888888;
@@ -985,9 +990,8 @@ class VideoOverlay extends Sprite
   private var _playing:Boolean;
   private var _timeout:int;
 
-  public function VideoOverlay(size:int=100)
+  public function VideoOverlay()
   {
-    _size = size;
     _timeout = -fadeDuration;
     alpha = 0;
   }
@@ -1013,12 +1017,12 @@ class VideoOverlay extends Sprite
     graphics.drawRect(0, 0, _width, _height);
     graphics.endFill();
 
-    var size:int = _size/16;
+    var size:int = buttonSize/16;
     var cx:int = width/2;
     var cy:int = height/2;
 
     graphics.beginFill(buttonBgColor, (buttonBgColor>>>24)/255);
-    graphics.drawRect(cx-_size/2, cy-_size/2, _size, _size);
+    graphics.drawRect(cx-buttonSize/2, cy-buttonSize/2, buttonSize, buttonSize);
     graphics.endFill();
     if (_playing) {
       graphics.beginFill(buttonFgColor, (buttonFgColor>>>24)/255);
