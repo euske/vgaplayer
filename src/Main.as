@@ -379,6 +379,8 @@ public class Main extends Sprite
 
 } // package
 
+/// Private classed below.
+
 import flash.display.Sprite;
 import flash.events.Event;
 import flash.events.MouseEvent;
@@ -390,577 +392,9 @@ import flash.net.NetStreamInfo;
 import flash.ui.Keyboard;
 import flash.utils.getTimer;
 
-class VideoOverlay extends Sprite
-{
-  public var fadeDuration:int = 2000;
-  public var buttonBgColor:uint = 0x448888ff;
-  public var buttonFgColor:uint = 0xcc888888;
-
-  private var _size:int;
-  private var _width:int;
-  private var _height:int;
-  private var _playing:Boolean;
-  private var _timeout:int;
-
-  public function VideoOverlay(size:int=100)
-  {
-    _size = size;
-    _timeout = -fadeDuration;
-    alpha = 0;
-  }
-
-  public function resize(w:int, h:int):void
-  {
-    _width = w;
-    _height = h;
-    repaint();
-  }
-  
-  public function show(playing:Boolean):void
-  {
-    _playing = playing;
-    _timeout = getTimer();
-    repaint();
-  }
-
-  public function repaint():void
-  {
-    graphics.clear();
-    graphics.beginFill(0, 0);
-    graphics.drawRect(0, 0, _width, _height);
-    graphics.endFill();
-
-    var size:int = _size/16;
-    var cx:int = width/2;
-    var cy:int = height/2;
-
-    graphics.beginFill(buttonBgColor, (buttonBgColor>>>24)/255);
-    graphics.drawRect(cx-_size/2, cy-_size/2, _size, _size);
-    graphics.endFill();
-    if (_playing) {
-      graphics.beginFill(buttonFgColor, (buttonFgColor>>>24)/255);
-      graphics.moveTo(cx-size*4, cy-size*4);
-      graphics.lineTo(cx-size*4, cy+size*4);
-      graphics.lineTo(cx+size*4, cy);
-      graphics.endFill();
-    } else {
-      graphics.beginFill(buttonFgColor, (buttonFgColor>>>24)/255);
-      graphics.drawRect(cx-size*3, cy-size*4, size*2, size*8);
-      graphics.drawRect(cx+size*1, cy-size*4, size*2, size*8);
-      graphics.endFill();
-    }
-  }
-  
-  public function update():void
-  {
-    var a:Number = (_timeout - getTimer())/fadeDuration + 1.0;
-    alpha = Math.min(Math.max(a, 0.0), 1.0);
-  }
-}
-
-class ControlBar extends Sprite
-{
-  public var fadeDuration:int = 1000;
-
-  public var status:StatusDisplay;
-  public var playButton:PlayPauseButton;
-  public var volumeSlider:VolumeSlider;
-  public var fsButton:FullscreenButton;
-
-  private var _margin:int;
-  private var _autohide:Boolean;
-  private var _timeout:int;
-
-  public function ControlBar(fullscreen:Boolean=false, margin:int=4)
-  {
-    _margin = margin;
-    _timeout = -fadeDuration;
-
-    playButton = new PlayPauseButton();
-    playButton.toPlay = true;
-    addChild(playButton);
-
-    volumeSlider = new VolumeSlider();
-    volumeSlider.value = 1.0;
-    addChild(volumeSlider);
-
-    if (fullscreen) {
-      fsButton = new FullscreenButton();
-      addChild(fsButton);
-    }
-
-    status = new StatusDisplay();
-    addChild(status);
-  }
-
-  public function get autohide():Boolean
-  {
-    return _autohide;
-  }
-
-  public function set autohide(value:Boolean):void
-  {
-    _autohide = value;
-    show();
-  }
-
-  public function show(duration:int=2000):void
-  {
-    _timeout = getTimer()+duration;
-  }
-
-  public function resize(w:int, h:int):void
-  {
-    var size:int = h-_margin*2;
-
-    graphics.clear();
-    graphics.beginFill(0, 0.5);
-    graphics.drawRect(0, 0, w, h);
-    graphics.endFill();
-
-    playButton.resize(size, size);
-    playButton.x = _margin;
-    playButton.y = _margin;
-
-    volumeSlider.resize(size*2, size);
-    volumeSlider.x = playButton.x+playButton.width+_margin;
-    volumeSlider.y = _margin;
-
-    var x:int = width;
-    if (fsButton != null) {
-      fsButton.resize(size, size);
-      w -= fsButton.width + _margin;
-      fsButton.x = w;
-      fsButton.y = _margin;
-    }
-
-    status.resize(w-_margin*2-(volumeSlider.x+volumeSlider.width), size);
-    status.x = volumeSlider.x+volumeSlider.width+_margin;
-    status.y = _margin;
-  }
-
-  public function update():void
-  {
-    if (_autohide) {
-      var a:Number = (_timeout - getTimer())/fadeDuration + 1.0;
-      alpha = Math.min(Math.max(a, 0.0), 1.0);
-    } else {
-      alpha = 1.0;
-    }
-    status.update();
-    playButton.update();
-    volumeSlider.update();
-    if (fsButton != null) {
-      fsButton.update();
-    }
-  }
-}
-
-class DebugDisplay extends Sprite
-{
-  private var _logger:TextField;
-  private var _playstat:TextField;
-  private var _streaminfo:TextField;
-
-  public function DebugDisplay()
-  {
-    _logger = new TextField();
-    _logger.multiline = true;
-    _logger.wordWrap = true;
-    _logger.border = true;
-    _logger.width = 400;
-    _logger.height = 100;
-    _logger.background = true;
-    _logger.type = TextFieldType.DYNAMIC;
-    addChild(_logger);
-
-    _playstat = new TextField();
-    _playstat.multiline = true;
-    _playstat.width = 200;
-    _playstat.height = 100;
-    _playstat.textColor = 0xffffff;
-    _playstat.type = TextFieldType.DYNAMIC;
-    addChild(_playstat);
-
-    _streaminfo = new TextField();
-    _streaminfo.multiline = true;
-    _streaminfo.width = 200;
-    _streaminfo.height = 200;
-    _streaminfo.textColor = 0xffff00;
-    _streaminfo.type = TextFieldType.DYNAMIC;
-    addChild(_streaminfo);
-  }
-
-  public function writeLine(x:String):void
-  {
-    _logger.appendText(x+"\n");
-    _logger.scrollV = _logger.maxScrollV;
-  }
-
-  public function resize(w:int, h:int):void
-  {
-    _playstat.x = w - _playstat.width;
-    _playstat.y = h - _playstat.height;
-    _streaminfo.x = 0;
-    _streaminfo.y = h - _streaminfo.height;
-  }
-  
-  public function update(stream:NetStream):void
-  {
-    var text:String;
-    text = ("time: "+stream.time+"\n"+
-	    "bufferLength: "+stream.bufferLength+"\n"+
-	    "backBufferLength: "+stream.backBufferLength+"\n"+
-	    "currentFPS: "+Math.floor(stream.currentFPS)+"\n"+
-	    "liveDelay: "+stream.liveDelay+"\n");
-    _playstat.text = text;
-
-    var info:NetStreamInfo = stream.info;
-    text = ("isLive: "+info.isLive+"\n"+
-	    "byteCount: "+info.byteCount+"\n"+
-	    "audioBufferLength: "+info.audioBufferLength+"\n"+
-	    "videoBufferLength: "+info.videoBufferLength+"\n"+
-		"currentBytesPerSecond: "+Math.floor(info.currentBytesPerSecond)+"\n"+
-	    "maxBytesPerSecond: "+Math.floor(info.maxBytesPerSecond)+"\n"+
-	    "audioBytesPerSecond: "+Math.floor(info.audioBytesPerSecond)+"\n"+
-	    "videoBytesPerSecond: "+Math.floor(info.videoBytesPerSecond)+"\n"+
-	    "playbackBytesPerSecond: "+Math.floor(info.playbackBytesPerSecond)+"\n"+
-	    "droppedFrames: "+info.droppedFrames+"\n");
-    _streaminfo.text = text;
-  }
-}
-
-class Control extends Sprite
-{
-  public var bgColor:uint = 0x448888ff;
-  public var fgColor:uint = 0xcc888888;
-  public var hiColor:uint = 0xffeeeeee;
-  public var borderColor:uint = 0x88ffffff;
-
-  private var _width:int;
-  private var _height:int;
-
-  private var _mousedown:Boolean;
-  private var _mouseover:Boolean;
-  private var _invalidated:Boolean;
-
-  public function Control()
-  {
-    addEventListener(Event.ADDED_TO_STAGE, onAdded);
-    addEventListener(MouseEvent.MOUSE_OVER, onMouseOver);
-    addEventListener(MouseEvent.MOUSE_OUT, onMouseOut);
-  }
-
-  public function get pressed():Boolean
-  {
-    return _mouseover && _mousedown;
-  }
-
-  public function get highlit():Boolean
-  {
-    return _mouseover || _mousedown;
-  }
-
-  private function onAdded(e:Event):void 
-  {
-    stage.addEventListener(MouseEvent.MOUSE_DOWN, onMouseDown);
-    stage.addEventListener(MouseEvent.MOUSE_UP, onMouseUp);
-  }
-
-  protected virtual function onMouseDown(e:MouseEvent):void 
-  {
-    if (_mouseover) {
-      _mousedown = true;
-      _invalidated = true;
-    }
-  }
-
-  protected virtual function onMouseUp(e:MouseEvent):void 
-  {
-    if (_mousedown) {
-      _mousedown = false;
-      _invalidated = true;
-    }
-  }
-
-  protected virtual function onMouseOver(e:MouseEvent):void 
-  {
-    _mouseover = true;
-    _invalidated = true;
-  }
-
-  protected virtual function onMouseOut(e:MouseEvent):void 
-  {
-    _mouseover = false;
-    _invalidated = true;
-  }
-
-  protected function invalidate():void
-  {
-    _invalidated = true;
-  }
-
-  public virtual function resize(w:int, h:int):void
-  {
-    _width = w;
-    _height = h;
-    repaint();
-  }
-
-  public virtual function repaint():void
-  {
-    graphics.clear();
-    graphics.beginFill(bgColor, (bgColor>>>24)/255);
-    graphics.drawRect(0, 0, _width, _height);
-    graphics.endFill();
-  }
-
-  public virtual function update():void
-  {
-    if (_invalidated) {
-      _invalidated = false;
-      repaint();
-    }
-  }
-}
-
-class Button extends Control
-{
-  public override function repaint():void
-  {
-    super.repaint();
-
-    if (highlit) {
-      graphics.lineStyle(0, borderColor, (borderColor>>>24)/255);
-      graphics.drawRect(0, 0, width, height);
-    }
-  }
-}
-
-class Slider extends Control
-{
-  public static const CLICK:String = "Slider.Click";
-  public static const CHANGED:String = "Slider.Changed";
-
-  public var minDelta:int = 4;
-
-  private var _x0:int;
-  private var _y0:int;
-  private var _changing:Boolean;
-
-  protected override function onMouseDown(e:MouseEvent):void 
-  {
-    super.onMouseDown(e);
-    addEventListener(MouseEvent.MOUSE_MOVE, onMouseMove);
-    _x0 = e.localX;
-    _y0 = e.localY;
-    _changing = false;
-  }
-
-  protected override function onMouseUp(e:MouseEvent):void 
-  {
-    if (!_changing && pressed) {
-      dispatchEvent(new Event(CLICK));
-    }
-    removeEventListener(MouseEvent.MOUSE_MOVE, onMouseMove);
-    super.onMouseUp(e);
-  }
-
-  protected virtual function onMouseMove(e:MouseEvent):void 
-  {
-    if (_changing) {
-      onMouseDrag(e);
-    } else {
-      if (minDelta <= Math.abs(e.localX-_x0) ||
-	  minDelta <= Math.abs(e.localY-_y0)) {
-	_changing = true;
-      }
-    }
-  }
-
-  protected virtual function onMouseDrag(e:MouseEvent):void
-  {
-  }
-}
-
-class VolumeSlider extends Slider
-{
-  public var muteColor:uint = 0xffff0000;
-
-  private var _value:Number = 0;
-  private var _muted:Boolean = false;
-  
-  protected override function onMouseDrag(e:MouseEvent):void 
-  {
-    var size:int = Math.min(width, height)/8;
-    var w:int = (width-size*2);
-    value = (e.localX-size)/w;
-  }
-
-  public function get value():Number
-  {
-    return _value;
-  }
-
-  public function set value(v:Number):void
-  {
-    v = Math.max(0, Math.min(1, v));
-    if (_value != v) {
-      _value = v;
-      invalidate();
-      dispatchEvent(new Event(CHANGED));
-    }
-  }
-
-  public function get muted():Boolean
-  {
-    return _muted;
-  }
-
-  public function set muted(value:Boolean):void
-  {
-    _muted = value;
-    invalidate();
-  }
-
-  public override function repaint():void
-  {
-    super.repaint();
-    var size:int = Math.min(width, height)/4;
-    var color:uint = (highlit)? hiColor : fgColor;
-    var cx:int = width/2;
-    var cy:int = height/2;
-
-    graphics.lineStyle(0, color, (color>>>24)/255);
-    graphics.moveTo(size, height-size);
-    graphics.lineTo(width-size, size);
-    graphics.lineTo(width-size, height-size);
-    graphics.lineTo(size, height-size);
-
-    var w:int = (width-size*2);
-    var h:int = (height-size*2);
-    graphics.beginFill(color, (color>>>24)/255);
-    graphics.moveTo(size, height-size);
-    graphics.lineTo(size+_value*w, height-size-_value*h);
-    graphics.lineTo(size+_value*w, height-size);
-    graphics.endFill();
-
-    if (_muted) {
-      graphics.lineStyle(2, muteColor, (muteColor>>>24)/255);
-      graphics.moveTo(cx-size, cy-size);
-      graphics.lineTo(cx+size, cy+size);
-    }
-  }
-}
-
-class FullscreenButton extends Button
-{
-  private var _toFullscreen:Boolean = false;
-
-  public function get toFullscreen():Boolean
-  {
-    return _toFullscreen;
-  }
-
-  public function set toFullscreen(value:Boolean):void
-  {
-    _toFullscreen = value;
-    invalidate();
-  }
-
-  public override function repaint():void
-  {
-    super.repaint();
-    var size:int = Math.min(width, height)/16;
-    var color:uint = (highlit)? hiColor : fgColor;
-    var cx:int = width/2 + ((pressed)? 1 : 0);
-    var cy:int = height/2 + ((pressed)? 1 : 0);
-
-    if (_toFullscreen) {
-      graphics.beginFill(color, (color>>>24)/255);
-      graphics.drawRect(cx-size*7, cy-size*4, size*14, size*8);
-      graphics.endFill();
-    } else {
-      graphics.lineStyle(0, color, (color>>>24)/255);
-      graphics.drawRect(cx-size*7, cy-size*5, size*10, size*6);
-      graphics.drawRect(cx-size*2, cy-size*1, size*9, size*7);
-    }
-  }
-}
-
-class PlayPauseButton extends Button
-{
-  private var _toPlay:Boolean = false;
-
-  public function get toPlay():Boolean
-  {
-    return _toPlay;
-  }
-
-  public function set toPlay(value:Boolean):void
-  {
-    _toPlay = value;
-    invalidate();
-  }
-
-  public override function repaint():void
-  {
-    super.repaint();
-    var size:int = Math.min(width, height)/16;
-    var color:uint = (highlit)? hiColor : fgColor;
-    var cx:int = width/2 + ((pressed)? 1 : 0);
-    var cy:int = height/2 + ((pressed)? 1 : 0);
-
-    if (_toPlay) {
-      graphics.beginFill(color, (color>>>24)/255);
-      graphics.moveTo(cx-size*4, cy-size*4);
-      graphics.lineTo(cx-size*4, cy+size*4);
-      graphics.lineTo(cx+size*4, cy);
-      graphics.endFill();
-    } else {
-      graphics.beginFill(color, (color>>>24)/255);
-      graphics.drawRect(cx-size*3, cy-size*4, size*2, size*8);
-      graphics.drawRect(cx+size*1, cy-size*4, size*2, size*8);
-      graphics.endFill();
-    }
-  }
-}
-
-class StatusDisplay extends Control
-{
-  private var _text:TextField;
-
-  public function StatusDisplay()
-  {
-    _text = new TextField();
-    _text.selectable = false;
-    addChild(_text);
-  }
-
-  public function get text():String
-  {
-    return _text.text;
-  }
-  public function set text(value:String):void
-  {
-    _text.text = value;
-  }
-
-  public override function resize(w:int, h:int):void
-  {
-    super.resize(w, h);
-    _text.width = w;
-    _text.height = h;
-  }
-
-  public override function repaint():void
-  {
-    super.repaint();
-    var color:uint = (highlit)? hiColor : fgColor;
-    _text.textColor = color;
-  }
-}
-
+//  Params
+//  Object to hold the parameters given by FlashVars.
+//
 class Params
 {
   public var debug:Boolean = false;
@@ -1062,5 +496,618 @@ class Params
       v = v.substr(1);
     }
     return parseInt(v, 16);
+  }
+}
+
+
+//  Control
+//  Base class for buttons/sliders.
+//
+class Control extends Sprite
+{
+  public var bgColor:uint = 0x448888ff;
+  public var fgColor:uint = 0xcc888888;
+  public var hiColor:uint = 0xffeeeeee;
+  public var borderColor:uint = 0x88ffffff;
+
+  private var _width:int;
+  private var _height:int;
+
+  private var _mousedown:Boolean;
+  private var _mouseover:Boolean;
+  private var _invalidated:Boolean;
+
+  public function Control()
+  {
+    addEventListener(Event.ADDED_TO_STAGE, onAdded);
+    addEventListener(MouseEvent.MOUSE_OVER, onMouseOver);
+    addEventListener(MouseEvent.MOUSE_OUT, onMouseOut);
+  }
+
+  public function get pressed():Boolean
+  {
+    return _mouseover && _mousedown;
+  }
+
+  public function get highlit():Boolean
+  {
+    return _mouseover || _mousedown;
+  }
+
+  private function onAdded(e:Event):void 
+  {
+    stage.addEventListener(MouseEvent.MOUSE_DOWN, onMouseDown);
+    stage.addEventListener(MouseEvent.MOUSE_UP, onMouseUp);
+  }
+
+  protected virtual function onMouseDown(e:MouseEvent):void 
+  {
+    if (_mouseover) {
+      _mousedown = true;
+      _invalidated = true;
+    }
+  }
+
+  protected virtual function onMouseUp(e:MouseEvent):void 
+  {
+    if (_mousedown) {
+      _mousedown = false;
+      _invalidated = true;
+    }
+  }
+
+  protected virtual function onMouseOver(e:MouseEvent):void 
+  {
+    _mouseover = true;
+    _invalidated = true;
+  }
+
+  protected virtual function onMouseOut(e:MouseEvent):void 
+  {
+    _mouseover = false;
+    _invalidated = true;
+  }
+
+  protected function invalidate():void
+  {
+    _invalidated = true;
+  }
+
+  public virtual function resize(w:int, h:int):void
+  {
+    _width = w;
+    _height = h;
+    repaint();
+  }
+
+  public virtual function repaint():void
+  {
+    graphics.clear();
+    graphics.beginFill(bgColor, (bgColor>>>24)/255);
+    graphics.drawRect(0, 0, _width, _height);
+    graphics.endFill();
+  }
+
+  public virtual function update():void
+  {
+    if (_invalidated) {
+      _invalidated = false;
+      repaint();
+    }
+  }
+}
+
+
+//  Button
+//  Generic button class.
+//  
+class Button extends Control
+{
+  public override function repaint():void
+  {
+    super.repaint();
+
+    if (highlit) {
+      graphics.lineStyle(0, borderColor, (borderColor>>>24)/255);
+      graphics.drawRect(0, 0, width, height);
+    }
+  }
+}
+
+
+//  Slider
+//  Generic slider class.
+// 
+class Slider extends Control
+{
+  public static const CLICK:String = "Slider.Click";
+  public static const CHANGED:String = "Slider.Changed";
+
+  public var minDelta:int = 4;
+
+  private var _x0:int;
+  private var _y0:int;
+  private var _changing:Boolean;
+
+  protected override function onMouseDown(e:MouseEvent):void 
+  {
+    super.onMouseDown(e);
+    addEventListener(MouseEvent.MOUSE_MOVE, onMouseMove);
+    _x0 = e.localX;
+    _y0 = e.localY;
+    _changing = false;
+  }
+
+  protected override function onMouseUp(e:MouseEvent):void 
+  {
+    if (!_changing && pressed) {
+      dispatchEvent(new Event(CLICK));
+    }
+    removeEventListener(MouseEvent.MOUSE_MOVE, onMouseMove);
+    super.onMouseUp(e);
+  }
+
+  protected virtual function onMouseMove(e:MouseEvent):void 
+  {
+    if (_changing) {
+      onMouseDrag(e);
+    } else {
+      if (minDelta <= Math.abs(e.localX-_x0) ||
+	  minDelta <= Math.abs(e.localY-_y0)) {
+	_changing = true;
+      }
+    }
+  }
+
+  protected virtual function onMouseDrag(e:MouseEvent):void
+  {
+  }
+}
+
+
+//  ControlBar
+//  Bar shown at the bottom of screen containing buttons, etc.
+//
+class ControlBar extends Sprite
+{
+  public var fadeDuration:int = 1000;
+
+  public var status:StatusDisplay;
+  public var playButton:PlayPauseButton;
+  public var volumeSlider:VolumeSlider;
+  public var fsButton:FullscreenButton;
+
+  private var _margin:int;
+  private var _autohide:Boolean;
+  private var _timeout:int;
+
+  public function ControlBar(fullscreen:Boolean=false, margin:int=4)
+  {
+    _margin = margin;
+    _timeout = -fadeDuration;
+
+    playButton = new PlayPauseButton();
+    playButton.toPlay = true;
+    addChild(playButton);
+
+    volumeSlider = new VolumeSlider();
+    volumeSlider.value = 1.0;
+    addChild(volumeSlider);
+
+    if (fullscreen) {
+      fsButton = new FullscreenButton();
+      addChild(fsButton);
+    }
+
+    status = new StatusDisplay();
+    addChild(status);
+  }
+
+  public function get autohide():Boolean
+  {
+    return _autohide;
+  }
+
+  public function set autohide(value:Boolean):void
+  {
+    _autohide = value;
+    show();
+  }
+
+  public function show(duration:int=2000):void
+  {
+    _timeout = getTimer()+duration;
+  }
+
+  public function resize(w:int, h:int):void
+  {
+    var size:int = h-_margin*2;
+
+    graphics.clear();
+    graphics.beginFill(0, 0.5);
+    graphics.drawRect(0, 0, w, h);
+    graphics.endFill();
+
+    playButton.resize(size, size);
+    playButton.x = _margin;
+    playButton.y = _margin;
+
+    volumeSlider.resize(size*2, size);
+    volumeSlider.x = playButton.x+playButton.width+_margin;
+    volumeSlider.y = _margin;
+
+    var x:int = width;
+    if (fsButton != null) {
+      fsButton.resize(size, size);
+      w -= fsButton.width + _margin;
+      fsButton.x = w;
+      fsButton.y = _margin;
+    }
+
+    status.resize(w-_margin*2-(volumeSlider.x+volumeSlider.width), size);
+    status.x = volumeSlider.x+volumeSlider.width+_margin;
+    status.y = _margin;
+  }
+
+  public function update():void
+  {
+    if (_autohide) {
+      var a:Number = (_timeout - getTimer())/fadeDuration + 1.0;
+      alpha = Math.min(Math.max(a, 0.0), 1.0);
+    } else {
+      alpha = 1.0;
+    }
+    status.update();
+    playButton.update();
+    volumeSlider.update();
+    if (fsButton != null) {
+      fsButton.update();
+    }
+  }
+}
+
+
+//  VolumeSlider
+//  A volume slider.  (part of ControlBar)
+//
+class VolumeSlider extends Slider
+{
+  public var muteColor:uint = 0xffff0000;
+
+  private var _value:Number = 0;
+  private var _muted:Boolean = false;
+  
+  protected override function onMouseDrag(e:MouseEvent):void 
+  {
+    var size:int = Math.min(width, height)/8;
+    var w:int = (width-size*2);
+    value = (e.localX-size)/w;
+  }
+
+  public function get value():Number
+  {
+    return _value;
+  }
+
+  public function set value(v:Number):void
+  {
+    v = Math.max(0, Math.min(1, v));
+    if (_value != v) {
+      _value = v;
+      invalidate();
+      dispatchEvent(new Event(CHANGED));
+    }
+  }
+
+  public function get muted():Boolean
+  {
+    return _muted;
+  }
+
+  public function set muted(value:Boolean):void
+  {
+    _muted = value;
+    invalidate();
+  }
+
+  public override function repaint():void
+  {
+    super.repaint();
+    var size:int = Math.min(width, height)/4;
+    var color:uint = (highlit)? hiColor : fgColor;
+    var cx:int = width/2;
+    var cy:int = height/2;
+
+    graphics.lineStyle(0, color, (color>>>24)/255);
+    graphics.moveTo(size, height-size);
+    graphics.lineTo(width-size, size);
+    graphics.lineTo(width-size, height-size);
+    graphics.lineTo(size, height-size);
+
+    var w:int = (width-size*2);
+    var h:int = (height-size*2);
+    graphics.beginFill(color, (color>>>24)/255);
+    graphics.moveTo(size, height-size);
+    graphics.lineTo(size+_value*w, height-size-_value*h);
+    graphics.lineTo(size+_value*w, height-size);
+    graphics.endFill();
+
+    if (_muted) {
+      graphics.lineStyle(2, muteColor, (muteColor>>>24)/255);
+      graphics.moveTo(cx-size, cy-size);
+      graphics.lineTo(cx+size, cy+size);
+    }
+  }
+}
+
+
+//  FullscreenButton
+//  Fullscreen/Windowed toggle button. (part of ControlBar)
+//
+class FullscreenButton extends Button
+{
+  private var _toFullscreen:Boolean = false;
+
+  public function get toFullscreen():Boolean
+  {
+    return _toFullscreen;
+  }
+
+  public function set toFullscreen(value:Boolean):void
+  {
+    _toFullscreen = value;
+    invalidate();
+  }
+
+  public override function repaint():void
+  {
+    super.repaint();
+    var size:int = Math.min(width, height)/16;
+    var color:uint = (highlit)? hiColor : fgColor;
+    var cx:int = width/2 + ((pressed)? 1 : 0);
+    var cy:int = height/2 + ((pressed)? 1 : 0);
+
+    if (_toFullscreen) {
+      graphics.beginFill(color, (color>>>24)/255);
+      graphics.drawRect(cx-size*7, cy-size*4, size*14, size*8);
+      graphics.endFill();
+    } else {
+      graphics.lineStyle(0, color, (color>>>24)/255);
+      graphics.drawRect(cx-size*7, cy-size*5, size*10, size*6);
+      graphics.drawRect(cx-size*2, cy-size*1, size*9, size*7);
+    }
+  }
+}
+
+
+//  PlayPauseButton
+//  Play/pause toggle button. (part of ControlBar)
+//
+class PlayPauseButton extends Button
+{
+  private var _toPlay:Boolean = false;
+
+  public function get toPlay():Boolean
+  {
+    return _toPlay;
+  }
+
+  public function set toPlay(value:Boolean):void
+  {
+    _toPlay = value;
+    invalidate();
+  }
+
+  public override function repaint():void
+  {
+    super.repaint();
+    var size:int = Math.min(width, height)/16;
+    var color:uint = (highlit)? hiColor : fgColor;
+    var cx:int = width/2 + ((pressed)? 1 : 0);
+    var cy:int = height/2 + ((pressed)? 1 : 0);
+
+    if (_toPlay) {
+      graphics.beginFill(color, (color>>>24)/255);
+      graphics.moveTo(cx-size*4, cy-size*4);
+      graphics.lineTo(cx-size*4, cy+size*4);
+      graphics.lineTo(cx+size*4, cy);
+      graphics.endFill();
+    } else {
+      graphics.beginFill(color, (color>>>24)/255);
+      graphics.drawRect(cx-size*3, cy-size*4, size*2, size*8);
+      graphics.drawRect(cx+size*1, cy-size*4, size*2, size*8);
+      graphics.endFill();
+    }
+  }
+}
+
+
+//  StatusDisplay
+//  Shows a text status. (part of ControlBar)
+//
+class StatusDisplay extends Control
+{
+  private var _text:TextField;
+
+  public function StatusDisplay()
+  {
+    _text = new TextField();
+    _text.selectable = false;
+    addChild(_text);
+  }
+
+  public function get text():String
+  {
+    return _text.text;
+  }
+  public function set text(value:String):void
+  {
+    _text.text = value;
+  }
+
+  public override function resize(w:int, h:int):void
+  {
+    super.resize(w, h);
+    _text.width = w;
+    _text.height = h;
+  }
+
+  public override function repaint():void
+  {
+    super.repaint();
+    var color:uint = (highlit)? hiColor : fgColor;
+    _text.textColor = color;
+  }
+}
+
+
+//  VideoOverlay
+//  A transparent button shown over the video.
+//
+class VideoOverlay extends Sprite
+{
+  public var fadeDuration:int = 2000;
+  public var buttonBgColor:uint = 0x448888ff;
+  public var buttonFgColor:uint = 0xcc888888;
+
+  private var _size:int;
+  private var _width:int;
+  private var _height:int;
+  private var _playing:Boolean;
+  private var _timeout:int;
+
+  public function VideoOverlay(size:int=100)
+  {
+    _size = size;
+    _timeout = -fadeDuration;
+    alpha = 0;
+  }
+
+  public function resize(w:int, h:int):void
+  {
+    _width = w;
+    _height = h;
+    repaint();
+  }
+  
+  public function show(playing:Boolean):void
+  {
+    _playing = playing;
+    _timeout = getTimer();
+    repaint();
+  }
+
+  public function repaint():void
+  {
+    graphics.clear();
+    graphics.beginFill(0, 0);
+    graphics.drawRect(0, 0, _width, _height);
+    graphics.endFill();
+
+    var size:int = _size/16;
+    var cx:int = width/2;
+    var cy:int = height/2;
+
+    graphics.beginFill(buttonBgColor, (buttonBgColor>>>24)/255);
+    graphics.drawRect(cx-_size/2, cy-_size/2, _size, _size);
+    graphics.endFill();
+    if (_playing) {
+      graphics.beginFill(buttonFgColor, (buttonFgColor>>>24)/255);
+      graphics.moveTo(cx-size*4, cy-size*4);
+      graphics.lineTo(cx-size*4, cy+size*4);
+      graphics.lineTo(cx+size*4, cy);
+      graphics.endFill();
+    } else {
+      graphics.beginFill(buttonFgColor, (buttonFgColor>>>24)/255);
+      graphics.drawRect(cx-size*3, cy-size*4, size*2, size*8);
+      graphics.drawRect(cx+size*1, cy-size*4, size*2, size*8);
+      graphics.endFill();
+    }
+  }
+  
+  public function update():void
+  {
+    var a:Number = (_timeout - getTimer())/fadeDuration + 1.0;
+    alpha = Math.min(Math.max(a, 0.0), 1.0);
+  }
+}
+
+
+//  DebugDisplay
+//  Text areas showing the debug info.
+//
+class DebugDisplay extends Sprite
+{
+  private var _logger:TextField;
+  private var _playstat:TextField;
+  private var _streaminfo:TextField;
+
+  public function DebugDisplay()
+  {
+    _logger = new TextField();
+    _logger.multiline = true;
+    _logger.wordWrap = true;
+    _logger.border = true;
+    _logger.width = 400;
+    _logger.height = 100;
+    _logger.background = true;
+    _logger.type = TextFieldType.DYNAMIC;
+    addChild(_logger);
+
+    _playstat = new TextField();
+    _playstat.multiline = true;
+    _playstat.width = 200;
+    _playstat.height = 100;
+    _playstat.textColor = 0xffffff;
+    _playstat.type = TextFieldType.DYNAMIC;
+    addChild(_playstat);
+
+    _streaminfo = new TextField();
+    _streaminfo.multiline = true;
+    _streaminfo.width = 200;
+    _streaminfo.height = 200;
+    _streaminfo.textColor = 0xffff00;
+    _streaminfo.type = TextFieldType.DYNAMIC;
+    addChild(_streaminfo);
+  }
+
+  public function writeLine(x:String):void
+  {
+    _logger.appendText(x+"\n");
+    _logger.scrollV = _logger.maxScrollV;
+  }
+
+  public function resize(w:int, h:int):void
+  {
+    _playstat.x = w - _playstat.width;
+    _playstat.y = h - _playstat.height;
+    _streaminfo.x = 0;
+    _streaminfo.y = h - _streaminfo.height;
+  }
+  
+  public function update(stream:NetStream):void
+  {
+    if (!visible) return;
+
+    var text:String;
+    text = ("time: "+stream.time+"\n"+
+	    "bufferLength: "+stream.bufferLength+"\n"+
+	    "backBufferLength: "+stream.backBufferLength+"\n"+
+	    "currentFPS: "+Math.floor(stream.currentFPS)+"\n"+
+	    "liveDelay: "+stream.liveDelay+"\n");
+    _playstat.text = text;
+
+    var info:NetStreamInfo = stream.info;
+    text = ("isLive: "+info.isLive+"\n"+
+	    "byteCount: "+info.byteCount+"\n"+
+	    "audioBufferLength: "+info.audioBufferLength+"\n"+
+	    "videoBufferLength: "+info.videoBufferLength+"\n"+
+		"currentBytesPerSecond: "+Math.floor(info.currentBytesPerSecond)+"\n"+
+	    "maxBytesPerSecond: "+Math.floor(info.maxBytesPerSecond)+"\n"+
+	    "audioBytesPerSecond: "+Math.floor(info.audioBytesPerSecond)+"\n"+
+	    "videoBytesPerSecond: "+Math.floor(info.videoBytesPerSecond)+"\n"+
+	    "playbackBytesPerSecond: "+Math.floor(info.playbackBytesPerSecond)+"\n"+
+	    "droppedFrames: "+info.droppedFrames+"\n");
+    _streaminfo.text = text;
   }
 }

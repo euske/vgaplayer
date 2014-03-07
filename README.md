@@ -1,7 +1,7 @@
 VGA Player
 ==========
 
-It's an open source viewer for Adobe Flash Media Server streaming (RTMP stream).
+It's an open source player for Adobe Flash Media Server streaming (RTMP stream).
 
 Typical usage:
 
