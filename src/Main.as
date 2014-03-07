@@ -12,6 +12,7 @@ import flash.display.StageAlign;
 import flash.events.Event;
 import flash.events.KeyboardEvent;
 import flash.events.MouseEvent;
+import flash.events.FullScreenEvent;
 import flash.events.NetStatusEvent;
 import flash.events.AsyncErrorEvent;
 import flash.media.Video;
@@ -45,10 +46,6 @@ public class Main extends Sprite
     stage.color = _params.bgColor;
     stage.scaleMode = StageScaleMode.NO_SCALE;
     stage.align = StageAlign.TOP_LEFT;
-    stage.addEventListener(Event.RESIZE, onResize);
-    stage.addEventListener(Event.ENTER_FRAME, onEnterFrame);
-    stage.addEventListener(MouseEvent.MOUSE_MOVE, onMouseMove);
-    stage.addEventListener(KeyboardEvent.KEY_DOWN, onKeyDown);
 
     _video = new Video();
     addChild(_video);
@@ -87,6 +84,11 @@ public class Main extends Sprite
     _debugdisp.visible = _params.debug;
     addChild(_debugdisp);
 
+    stage.addEventListener(Event.RESIZE, onResize);
+    stage.addEventListener(Event.ENTER_FRAME, onEnterFrame);
+    stage.addEventListener(FullScreenEvent.FULL_SCREEN, onFullScreen);
+    stage.addEventListener(MouseEvent.MOUSE_MOVE, onMouseMove);
+    stage.addEventListener(KeyboardEvent.KEY_DOWN, onKeyDown);
     resize();
 
     log("FlashVars:", expandAttrs(info.parameters));
@@ -130,6 +132,11 @@ public class Main extends Sprite
   private function onResize(e:Event):void
   {
     resize();
+  }
+
+  private function onFullScreen(e:FullScreenEvent):void
+  {
+    _control.fsButton.toFullscreen = !e.fullScreen;
   }
 
   private function onEnterFrame(e:Event):void
@@ -290,7 +297,6 @@ public class Main extends Sprite
     stage.displayState = ((button.toFullscreen)? 
 			  StageDisplayState.FULL_SCREEN : 
 			  StageDisplayState.NORMAL);
-    button.toFullscreen = !button.toFullscreen;
   }
 
   public function connect():void
