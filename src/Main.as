@@ -5,6 +5,7 @@ package {
 
 import flash.display.Sprite;
 import flash.display.DisplayObject;
+import flash.display.Loader;
 import flash.display.LoaderInfo;
 import flash.display.StageDisplayState;
 import flash.display.StageScaleMode;
@@ -19,6 +20,7 @@ import flash.media.Video;
 import flash.media.SoundTransform;
 import flash.net.NetConnection;
 import flash.net.NetStream;
+import flash.net.URLRequest;
 import flash.ui.Keyboard;
 import flash.geom.Point;
 
@@ -32,6 +34,7 @@ public class Main extends Sprite
   private var _control:ControlBar;
   private var _debugdisp:DebugDisplay;
 
+  private var _imageLoader:Loader;
   private var _connection:NetConnection;
   private var _stream:NetStream;
   private var _videosize:Point;
@@ -49,6 +52,12 @@ public class Main extends Sprite
 
     _video = new Video();
     addChild(_video);
+
+    if (_params.imageUrl != null) {
+      _imageLoader = new Loader();
+      _imageLoader.load(new URLRequest(_params.imageUrl));
+      addChildAt(_imageLoader, 0);
+    }
 
     _overlay = new VideoOverlay();
     _overlay.buttonBgColor = _params.buttonBgColor;
@@ -418,6 +427,7 @@ class Params
   public var buttonHiColor:uint = 0xffeeeeee;
   public var buttonBorderColor:uint = 0x88ffffff;
   public var volumeMutedColor:uint = 0xffff0000;
+  public var imageUrl:String = null;
 
   public function Params(baseurl:String, obj:Object)
   {
@@ -474,6 +484,10 @@ class Params
       // volumeMutedColor
       if (obj.volumeMutedColor) {
 	volumeMutedColor = parseColor(obj.volumeMutedColor);
+      }
+      // imageUrl
+      if (obj.imageUrl) {
+	imageUrl = obj.imageUrl;
       }
     }
 
