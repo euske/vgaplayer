@@ -3,6 +3,8 @@ VGA Player
 
 It's an open source player for Adobe Flash Media Server streaming (RTMP stream).
 
+Demo: http://euske.github.io/vgaplayer/demo.html
+
 Typical usage:
 
     <embed src="play.swf" width="100%" height="99%" 
@@ -20,6 +22,7 @@ FlashVars Parameters:
   * url: RTMP URL. (e.g. "rtmp://example.com/live" or "/app/live")
   * debug: Indicates if the debug console is displayed. (1: on, 0: off)
   * fullscreen: Indicates if the fullscreen button is shown. (1: on, 0: off)
+  * smoothing: Indicates if the video smoothing is turned on. (1: on, 0: off)
   * bufferTime: Stream buffering time. (default: 1.0 sec)
   * bufferTimeMax: Maximum stream buffering time. (default: 1.0 sec)
   * bgColor: Background color. (default: "#000000")
@@ -28,6 +31,7 @@ FlashVars Parameters:
   * buttonHiColor: Button highlighting color. (default: "#ffeeeeee")
   * buttonBorderColor: Button border color. (default: "#88ffffff")
   * volumeMutedColor: Color used when the volume is muted. (default: "#ffff0000")
+  * imageUrl: Background image URL.
 
 Terms and Conditions
 --------------------
