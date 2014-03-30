@@ -38,6 +38,7 @@ public class Main extends Sprite
   private var _connection:NetConnection;
   private var _stream:NetStream;
   private var _videosize:Point;
+  private var _videoduration:Number;
   private var _started:Boolean;
 
   // Main()
@@ -79,6 +80,10 @@ public class Main extends Sprite
     _control.volumeSlider.hiColor = _params.buttonHiColor;
     _control.volumeSlider.addEventListener(Slider.CLICK, onVolumeSliderClick);
     _control.volumeSlider.addEventListener(Slider.CHANGED, onVolumeSliderChanged);
+    _control.seekBar.bgColor = _params.buttonBgColor;
+    _control.seekBar.fgColor = _params.buttonFgColor;
+    _control.seekBar.hiColor = _params.buttonHiColor;
+    _control.seekBar.addEventListener(Slider.CHANGED, onSeekBarChanged);
     if (_control.fsButton != null) {
       _control.fsButton.bgColor = _params.buttonBgColor;
       _control.fsButton.fgColor = _params.buttonFgColor;
@@ -228,16 +233,19 @@ public class Main extends Sprite
       _control.autohide = false;
       _control.playButton.toPlay = true;
       _control.statusDisplay.text = "Stopped";
+      _updateStatus();
       break;
 
     case "NetStream.Buffer.Empty":
       _control.autohide = false;
       _control.statusDisplay.text = "Buffering...";
       break;
+
     case "NetStream.Buffer.Full":
       _started = true;
       _control.autohide = true;
       _control.statusDisplay.text = "Playing";
+      _updateStatus();
       break;
     }
   }
@@ -246,6 +254,8 @@ public class Main extends Sprite
   {
     log("onMetaData:", expandAttrs(info));
     _videosize = new Point(info.width, info.height);
+    _videoduration = info.duration;
+    _updateStatus();
     resize();
   }
 
@@ -287,6 +297,18 @@ public class Main extends Sprite
     }
   }
 
+  private function _updateStatus():void
+  {
+    if (_started && 0 < _videoduration) {
+      _control.statusDisplay.visible = false;
+      _control.seekBar.duration = _videoduration;
+      _control.seekBar.visible = true;
+    } else {
+      _control.statusDisplay.visible = true;
+      _control.seekBar.visible = false;
+    }
+  }
+
   private function onVolumeSliderClick(e:Event):void
   {
     var slider:VolumeSlider = VolumeSlider(e.target);
@@ -298,6 +320,14 @@ public class Main extends Sprite
   {
     var slider:VolumeSlider = VolumeSlider(e.target);
     _updateVolume(slider);
+  }
+
+  private function onSeekBarChanged(e:Event):void
+  {
+    var seekbar:SeekBar = SeekBar(e.target);
+    if (_stream != null) {
+      _stream.seek(seekbar.goal);
+    }
   }
 
   private function onFullscreenClick(e:Event):void
@@ -385,8 +415,11 @@ public class Main extends Sprite
   {
     _overlay.update();
     _control.update();
-    if (_debugdisp.visible && _stream != null) {
-      _debugdisp.update(_stream);
+    if (_stream != null) {
+      _control.seekBar.time = _stream.time;
+      if (_debugdisp.visible) {
+	_debugdisp.update(_stream);
+      }
     }
   }
 
@@ -701,6 +734,7 @@ class ControlBar extends Sprite
   public var statusDisplay:StatusDisplay;
   public var playButton:PlayPauseButton;
   public var volumeSlider:VolumeSlider;
+  public var seekBar:SeekBar;
   public var fsButton:FullscreenButton;
 
   private var _autohide:Boolean;
@@ -718,6 +752,10 @@ class ControlBar extends Sprite
     volumeSlider.value = 1.0;
     addChild(volumeSlider);
 
+    seekBar = new SeekBar();
+    seekBar.visible = false;
+    addChild(seekBar);
+    
     if (fullscreen) {
       fsButton = new FullscreenButton();
       addChild(fsButton);
@@ -771,6 +809,10 @@ class ControlBar extends Sprite
     volumeSlider.y = margin;
     x1 = volumeSlider.x - margin;
     
+    seekBar.resize(x1-x0, size);
+    seekBar.x = x0;
+    seekBar.y = margin;
+
     statusDisplay.resize(x1-x0, size);
     statusDisplay.x = x0;
     statusDisplay.y = margin;
@@ -784,9 +826,10 @@ class ControlBar extends Sprite
     } else {
       alpha = 1.0;
     }
-    statusDisplay.update();
     playButton.update();
     volumeSlider.update();
+    seekBar.update();
+    statusDisplay.update();
     if (fsButton != null) {
       fsButton.update();
     }
@@ -806,9 +849,11 @@ class VolumeSlider extends Slider
   
   protected override function onMouseDrag(e:MouseEvent):void 
   {
+    super.onMouseDrag(e);
     var size:int = buttonSize/8;
     var w:int = (width-size*2);
     value = (e.localX-size)/w;
+    dispatchEvent(new Event(CHANGED));
   }
 
   public function get value():Number
@@ -822,7 +867,6 @@ class VolumeSlider extends Slider
     if (_value != v) {
       _value = v;
       invalidate();
-      dispatchEvent(new Event(CHANGED));
     }
   }
 
@@ -864,6 +908,90 @@ class VolumeSlider extends Slider
       graphics.moveTo(cx-size, cy-size);
       graphics.lineTo(cx+size, cy+size);
     }
+  }
+}
+
+
+//  SeekBar
+//  A horizontal seek bar.  (part of ControlBar)
+//
+class SeekBar extends Slider
+{
+  public var margin:int = 4;
+  public var barSize:int = 2;
+
+  private var _duration:Number = 0;
+  private var _time:Number = 0;
+  private var _goal:Number = 0;
+  
+  protected override function onMouseDown(e:MouseEvent):void 
+  {
+    super.onMouseDown(e);
+    updateGoal(e.localX);
+  }
+
+  protected override function onMouseDrag(e:MouseEvent):void 
+  {
+    super.onMouseDrag(e);
+    updateGoal(e.localX);
+  }
+
+  protected override function onMouseUp(e:MouseEvent):void 
+  {
+    super.onMouseUp(e);
+    dispatchEvent(new Event(CHANGED));
+  }
+
+  private function updateGoal(x:int):void
+  {
+    var w:int = (width-margin*2);
+    var v:Number = (x-margin)/w;
+    _goal = Math.max(0, Math.min(1, v));
+    invalidate();
+  }
+
+  public function get duration():Number
+  {
+    return _duration;
+  }
+
+  public function set duration(v:Number):void
+  {
+    _duration = v;
+    invalidate();
+  }
+
+  public function get goal():Number
+  {
+    return (_goal * duration);
+  }
+
+  public function get time():Number
+  {
+    return (_time * duration);
+  }
+
+  public function set time(v:Number):void
+  {
+    if (0 < duration) {
+      _time = v / duration;
+      invalidate();
+    }
+  }
+
+  public override function repaint():void
+  {
+    super.repaint();
+    var size:int = barSize;
+    var color:uint = (highlit)? hiColor : fgColor;
+    var value:Number = (pressed)? _goal : _time;
+
+    var w:int = (width-margin*2);
+    var h:int = (height-margin*2);
+    graphics.beginFill(color, (color>>>24)/255);
+    graphics.drawRect(margin, (height-size)/2, w, size);
+    graphics.drawRect(margin+value*w-size, margin, size*2, h);
+    graphics.endFill();
   }
 }
 
