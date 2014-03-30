@@ -66,9 +66,9 @@ public class Main extends Sprite
     addChild(_overlay);
 
     _control = new ControlBar(_params.fullscreen);
-    _control.status.bgColor = _params.buttonBgColor;
-    _control.status.fgColor = _params.buttonFgColor;
-    _control.status.hiColor = _params.buttonHiColor;
+    _control.statusDisplay.bgColor = _params.buttonBgColor;
+    _control.statusDisplay.fgColor = _params.buttonFgColor;
+    _control.statusDisplay.hiColor = _params.buttonHiColor;
     _control.playButton.bgColor = _params.buttonBgColor;
     _control.playButton.fgColor = _params.buttonFgColor;
     _control.playButton.hiColor = _params.buttonHiColor;
@@ -179,7 +179,7 @@ public class Main extends Sprite
     case "NetConnection.Connect.Rejected":
     case "NetConnection.Connect.InvalidApp":
       _control.autohide = false;
-      _control.status.text = "Failed";
+      _control.statusDisplay.text = "Failed";
       break;
       
     case "NetConnection.Connect.Success":
@@ -197,7 +197,7 @@ public class Main extends Sprite
       _video.attachNetStream(_stream);
       _updateVolume(_control.volumeSlider);
       _control.autohide = false;
-      _control.status.text = "Connected";
+      _control.statusDisplay.text = "Connected";
       _started = false;
       startPlaying();
       break;
@@ -211,14 +211,14 @@ public class Main extends Sprite
       _stream.client = null;
       _stream = null;
       _control.autohide = false;
-      _control.status.text = "Disconnected";
+      _control.statusDisplay.text = "Disconnected";
       break;
 
     case "NetStream.Play.Start":
       _started = true;
       _control.autohide = false;
       _control.playButton.toPlay = false;
-      _control.status.text = "Buffering...";
+      _control.statusDisplay.text = "Buffering...";
       break;
 
     case "NetStream.Play.Stop":
@@ -227,17 +227,17 @@ public class Main extends Sprite
       _started = false;
       _control.autohide = false;
       _control.playButton.toPlay = true;
-      _control.status.text = "Stopped";
+      _control.statusDisplay.text = "Stopped";
       break;
 
     case "NetStream.Buffer.Empty":
       _control.autohide = false;
-      _control.status.text = "Buffering...";
+      _control.statusDisplay.text = "Buffering...";
       break;
     case "NetStream.Buffer.Full":
       _started = true;
       _control.autohide = true;
-      _control.status.text = "Playing";
+      _control.statusDisplay.text = "Playing";
       break;
     }
   }
@@ -312,7 +312,7 @@ public class Main extends Sprite
   {
     if (_params.rtmpURL != null && !_connection.connected) {
       log("Connecting:", _params.rtmpURL);
-      _control.status.text = "Connecting...";
+      _control.statusDisplay.text = "Connecting...";
       _connection.connect(_params.rtmpURL);
     }
   }
@@ -321,7 +321,7 @@ public class Main extends Sprite
   {
     if (_stream != null && _params.streamPath != null) {
       log("Playing:", _params.streamPath);
-      _control.status.text = "Starting...";
+      _control.statusDisplay.text = "Starting...";
       _stream.play(_params.streamPath);
     }
   }
@@ -330,7 +330,7 @@ public class Main extends Sprite
   {
     if (_stream != null && _params.streamPath != null) {
       log("Stopping");
-      _control.status.text = "Stopping...";
+      _control.statusDisplay.text = "Stopping...";
       _stream.close();
     }
   }
@@ -698,7 +698,7 @@ class ControlBar extends Sprite
   public var margin:int = 4;
   public var fadeDuration:int = 1000;
 
-  public var status:StatusDisplay;
+  public var statusDisplay:StatusDisplay;
   public var playButton:PlayPauseButton;
   public var volumeSlider:VolumeSlider;
   public var fsButton:FullscreenButton;
@@ -723,8 +723,8 @@ class ControlBar extends Sprite
       addChild(fsButton);
     }
 
-    status = new StatusDisplay();
-    addChild(status);
+    statusDisplay = new StatusDisplay();
+    addChild(statusDisplay);
   }
 
   public function get autohide():Boolean
@@ -771,9 +771,9 @@ class ControlBar extends Sprite
     volumeSlider.y = margin;
     x1 = volumeSlider.x - margin;
     
-    status.resize(x1-x0, size);
-    status.x = x0;
-    status.y = margin;
+    statusDisplay.resize(x1-x0, size);
+    statusDisplay.x = x0;
+    statusDisplay.y = margin;
   }
 
   public function update():void
@@ -784,7 +784,7 @@ class ControlBar extends Sprite
     } else {
       alpha = 1.0;
     }
-    status.update();
+    statusDisplay.update();
     playButton.update();
     volumeSlider.update();
     if (fsButton != null) {
