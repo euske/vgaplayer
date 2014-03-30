@@ -38,6 +38,7 @@ public class Main extends Sprite
   private var _connection:NetConnection;
   private var _stream:NetStream;
   private var _videosize:Point;
+  private var _imagesize:Point;
   private var _videoduration:Number;
   private var _playing:Boolean;
 
@@ -58,6 +59,7 @@ public class Main extends Sprite
     if (_params.imageUrl != null) {
       _imageLoader = new Loader();
       _imageLoader.load(new URLRequest(_params.imageUrl));
+      _imageLoader.contentLoaderInfo.addEventListener(Event.COMPLETE, onImageLoaded);
       addChildAt(_imageLoader, 0);
     }
 
@@ -264,6 +266,12 @@ public class Main extends Sprite
     }
   }
 
+  private function onImageLoaded(event:Event):void
+  {
+    _imagesize = new Point(_imageLoader.width, _imageLoader.height);
+    resize();
+  }
+
   private function onMetaData(info:Object):void
   {
     log("onMetaData:", expandAttrs(info));
@@ -404,20 +412,26 @@ public class Main extends Sprite
     }
   }
 
-  public function resize():void
+  public function proportionalScaleToStage(obj:DisplayObject, size:Point):void
   {
     log("resize:", stage.stageWidth+","+stage.stageHeight);
-    x = 0;
-    y = 0;
-
-    if (_videosize != null) {
-      var r:Number = Math.min((stage.stageWidth / _videosize.x),
-			      (stage.stageHeight / _videosize.y));
-      _video.width = _videosize.x*r;
-      _video.height = _videosize.y*r;
-      _video.x = (stage.stageWidth - _video.width)/2;
-      _video.y = (stage.stageHeight - _video.height)/2;
+    if (size != null) {
+      x = 0;
+      y = 0;
+      var r:Number = Math.min((stage.stageWidth / size.x),
+		        (stage.stageHeight / size.y));
+      obj.width = size.x*r;
+      obj.height = size.y*r;
+      obj.x = (stage.stageWidth - obj.width)/2;
+      obj.y = (stage.stageHeight - obj.height)/2;
     }
+  }
+
+  public function resize():void
+  {
+
+    proportionalScaleToStage(_video, _videosize);
+    proportionalScaleToStage(_imageLoader, _imagesize);
 
     _overlay.resize(stage.stageWidth, stage.stageHeight);
     _overlay.x = 0;
