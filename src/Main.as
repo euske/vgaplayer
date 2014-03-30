@@ -102,6 +102,8 @@ public class Main extends Sprite
     stage.addEventListener(Event.RESIZE, onResize);
     stage.addEventListener(Event.ENTER_FRAME, onEnterFrame);
     stage.addEventListener(FullScreenEvent.FULL_SCREEN, onFullScreen);
+    stage.addEventListener(MouseEvent.MOUSE_DOWN, onMouseDown);
+    stage.addEventListener(MouseEvent.MOUSE_UP, onMouseUp);
     stage.addEventListener(MouseEvent.MOUSE_MOVE, onMouseMove);
     stage.addEventListener(KeyboardEvent.KEY_DOWN, onKeyDown);
     resize();
@@ -159,6 +161,14 @@ public class Main extends Sprite
     update();
   }
 
+  private function onMouseDown(e:MouseEvent):void 
+  {
+    _control.show();
+  }
+  private function onMouseUp(e:MouseEvent):void 
+  {
+    _control.show();
+  }
   private function onMouseMove(e:MouseEvent):void 
   {
     _control.show();
@@ -173,6 +183,7 @@ public class Main extends Sprite
       break;
     case Keyboard.SPACE:
       setPlayState(!_started);
+      _control.show();
       break;
     }
   }
