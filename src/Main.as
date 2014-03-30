@@ -1242,26 +1242,28 @@ class DebugDisplay extends Sprite
     _logger.multiline = true;
     _logger.wordWrap = true;
     _logger.border = true;
-    _logger.width = 400;
-    _logger.height = 100;
     _logger.background = true;
     _logger.type = TextFieldType.DYNAMIC;
+    _logger.width = 400;
+    _logger.height = 100;
     addChild(_logger);
 
     _playstat = new TextField();
     _playstat.multiline = true;
-    _playstat.width = 200;
-    _playstat.height = 100;
     _playstat.textColor = 0xffffff;
     _playstat.type = TextFieldType.DYNAMIC;
+    _playstat.text = "\n\n\n\n\n";
+    _playstat.width = 200;
+    _playstat.height = _playstat.textHeight+1;
     addChild(_playstat);
 
     _streaminfo = new TextField();
     _streaminfo.multiline = true;
-    _streaminfo.width = 200;
-    _streaminfo.height = 200;
     _streaminfo.textColor = 0xffff00;
     _streaminfo.type = TextFieldType.DYNAMIC;
+    _streaminfo.text = "\n\n\n\n\n\n\n\n\n\n";
+    _streaminfo.width = 200;
+    _streaminfo.height = _streaminfo.textHeight+1;
     addChild(_streaminfo);
   }
 
@@ -1296,7 +1298,7 @@ class DebugDisplay extends Sprite
 	    "byteCount: "+info.byteCount+"\n"+
 	    "audioBufferLength: "+info.audioBufferLength+"\n"+
 	    "videoBufferLength: "+info.videoBufferLength+"\n"+
-		"currentBytesPerSecond: "+Math.floor(info.currentBytesPerSecond)+"\n"+
+	    "currentBytesPerSecond: "+Math.floor(info.currentBytesPerSecond)+"\n"+
 	    "maxBytesPerSecond: "+Math.floor(info.maxBytesPerSecond)+"\n"+
 	    "audioBytesPerSecond: "+Math.floor(info.audioBytesPerSecond)+"\n"+
 	    "videoBytesPerSecond: "+Math.floor(info.videoBytesPerSecond)+"\n"+
