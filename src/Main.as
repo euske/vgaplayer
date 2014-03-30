@@ -315,9 +315,11 @@ public class Main extends Sprite
       _control.statusDisplay.visible = false;
       _control.seekBar.duration = _videoduration;
       _control.seekBar.visible = true;
+      _control.seekBar.locked = false;
     } else {
       _control.statusDisplay.visible = true;
       _control.seekBar.visible = false;
+      _control.seekBar.locked = false;
     }
   }
 
@@ -337,8 +339,9 @@ public class Main extends Sprite
   private function onSeekBarChanged(e:Event):void
   {
     var seekbar:SeekBar = SeekBar(e.target);
+    seekbar.locked = true;
     if (_stream != null) {
-      _stream.seek(seekbar.goal);
+      _stream.seek(seekbar.time);
     }
   }
 
@@ -364,7 +367,7 @@ public class Main extends Sprite
     if (_stream != null && _params.streamPath != null) {
       log("Playing:", _params.streamPath);
       _control.statusDisplay.text = "Starting...";
-      _stream.play(_params.streamPath);
+      _stream.play(_params.streamPath, _control.seekBar.time);
     }
   }
 
@@ -949,6 +952,7 @@ class SeekBar extends Slider
   public var barSize:int = 2;
 
   private var _duration:Number = 0;
+  private var _locked:Boolean = false;
   private var _time:Number = 0;
   private var _goal:Number = 0;
   
@@ -989,14 +993,15 @@ class SeekBar extends Slider
     invalidate();
   }
 
-  public function get goal():Number
+  public function get locked():Boolean
   {
-    return (_goal * duration);
+    return _locked;
   }
 
-  public function get time():Number
+  public function set locked(v:Boolean):void
   {
-    return (_time * duration);
+    _locked = v;
+    invalidate();
   }
 
   public function set time(v:Number):void
@@ -1007,12 +1012,18 @@ class SeekBar extends Slider
     }
   }
 
+  public function get time():Number
+  {
+    var v:Number = (_locked)? _goal : _time;
+    return (v * duration);
+  }
+
   public override function repaint():void
   {
     super.repaint();
     var size:int = barSize;
     var color:uint = (highlit)? hiColor : fgColor;
-    var value:Number = (pressed)? _goal : _time;
+    var value:Number = (_locked)? _goal : _time;
 
     var w:int = (width-margin*2);
     var h:int = (height-margin*2);
