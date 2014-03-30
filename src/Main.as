@@ -216,7 +216,7 @@ public class Main extends Sprite
       _control.autohide = false;
       _control.statusDisplay.text = "Connected";
       _started = false;
-      startPlaying();
+      startPlaying(_params.start);
       break;
 
     case "NetConnection.Connect.Closed":
@@ -232,10 +232,11 @@ public class Main extends Sprite
       break;
 
     case "NetStream.Play.Start":
-      _started = true;
+      _started = false;
       _control.autohide = false;
       _control.playButton.toPlay = false;
       _control.statusDisplay.text = "Buffering...";
+      _updateStatus();
       break;
 
     case "NetStream.Play.Stop":
@@ -249,6 +250,7 @@ public class Main extends Sprite
       break;
 
     case "NetStream.Buffer.Empty":
+      _started = false;
       _control.autohide = false;
       _control.statusDisplay.text = "Buffering...";
       break;
@@ -362,12 +364,15 @@ public class Main extends Sprite
     }
   }
 
-  public function startPlaying():void
+  public function startPlaying(start:Number=-1):void
   {
     if (_stream != null && _params.streamPath != null) {
       log("Playing:", _params.streamPath);
       _control.statusDisplay.text = "Starting...";
-      _stream.play(_params.streamPath, _control.seekBar.time);
+      if (start < 0) {
+	start = _control.seekBar.time;
+      }
+      _stream.play(_params.streamPath, start);
     }
   }
 
@@ -376,6 +381,7 @@ public class Main extends Sprite
     if (_stream != null && _params.streamPath != null) {
       log("Stopping");
       _control.statusDisplay.text = "Stopping...";
+      _started = false;
       _stream.close();
     }
   }
@@ -431,7 +437,9 @@ public class Main extends Sprite
     _overlay.update();
     _control.update();
     if (_stream != null) {
-      _control.seekBar.time = _stream.time;
+      if (_started) {
+	_control.seekBar.time = _stream.time;
+      }
       if (_debugdisp.visible) {
 	_debugdisp.update(_stream);
       }
@@ -469,6 +477,7 @@ class Params
   public var rtmpURL:String = null;
   public var streamPath:String = null;
   public var smoothing:Boolean = false;
+  public var start:Number = 0.0;
 
   public var bgColor:uint = 0x000000;
   public var buttonBgColor:uint = 0x448888ff;
@@ -512,6 +521,10 @@ class Params
       // smoothing
       if (obj.smoothing) {
 	smoothing = (parseInt(obj.smoothing) != 0);
+      }
+      // start
+      if (obj.start) {
+	start = parseFloat(obj.start);
       }
 
       // bgColor
