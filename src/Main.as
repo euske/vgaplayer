@@ -52,6 +52,7 @@ public class Main extends Sprite
     stage.align = StageAlign.TOP_LEFT;
 
     _video = new Video();
+    _video.smoothing = _params.smoothing;
     addChild(_video);
 
     if (_params.imageUrl != null) {
@@ -453,6 +454,7 @@ class Params
   public var fullscreen:Boolean = false;
   public var rtmpURL:String = null;
   public var streamPath:String = null;
+  public var smoothing:Boolean = false;
 
   public var bgColor:uint = 0x000000;
   public var buttonBgColor:uint = 0x448888ff;
@@ -492,6 +494,10 @@ class Params
       // fullscreen
       if (obj.fullscreen) {
 	fullscreen = (parseInt(obj.fullscreen) != 0);
+      }
+      // smoothing
+      if (obj.smoothing) {
+	smoothing = (parseInt(obj.smoothing) != 0);
       }
 
       // bgColor
