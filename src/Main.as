@@ -604,12 +604,14 @@ class Control extends Sprite
     if (_mouseover) {
       _mousedown = true;
       _invalidated = true;
+      onMouseDownLocal(e);
     }
   }
 
   protected virtual function onMouseUp(e:MouseEvent):void 
   {
     if (_mousedown) {
+      onMouseUpLocal(e);
       _mousedown = false;
       _invalidated = true;
     }
@@ -625,6 +627,14 @@ class Control extends Sprite
   {
     _mouseover = false;
     _invalidated = true;
+  }
+
+  protected virtual function onMouseDownLocal(e:MouseEvent):void 
+  {
+  }
+
+  protected virtual function onMouseUpLocal(e:MouseEvent):void 
+  {
   }
 
   protected function invalidate():void
@@ -654,6 +664,7 @@ class Control extends Sprite
       repaint();
     }
   }
+
 }
 
 
@@ -693,22 +704,22 @@ class Slider extends Button
   private var _y0:int;
   private var _changing:Boolean;
 
-  protected override function onMouseDown(e:MouseEvent):void 
+  protected override function onMouseDownLocal(e:MouseEvent):void 
   {
-    super.onMouseDown(e);
+    super.onMouseDownLocal(e);
     addEventListener(MouseEvent.MOUSE_MOVE, onMouseMove);
     _x0 = e.localX;
     _y0 = e.localY;
     _changing = false;
   }
 
-  protected override function onMouseUp(e:MouseEvent):void 
+  protected override function onMouseUpLocal(e:MouseEvent):void 
   {
     if (!_changing && pressed) {
       dispatchEvent(new Event(CLICK));
     }
     removeEventListener(MouseEvent.MOUSE_MOVE, onMouseMove);
-    super.onMouseUp(e);
+    super.onMouseUpLocal(e);
   }
 
   protected virtual function onMouseMove(e:MouseEvent):void 
@@ -930,9 +941,9 @@ class SeekBar extends Slider
   private var _time:Number = 0;
   private var _goal:Number = 0;
   
-  protected override function onMouseDown(e:MouseEvent):void 
+  protected override function onMouseDownLocal(e:MouseEvent):void 
   {
-    super.onMouseDown(e);
+    super.onMouseDownLocal(e);
     updateGoal(e.localX);
   }
 
@@ -942,9 +953,9 @@ class SeekBar extends Slider
     updateGoal(e.localX);
   }
 
-  protected override function onMouseUp(e:MouseEvent):void 
+  protected override function onMouseUpLocal(e:MouseEvent):void 
   {
-    super.onMouseUp(e);
+    super.onMouseUpLocal(e);
     dispatchEvent(new Event(CHANGED));
   }
 
