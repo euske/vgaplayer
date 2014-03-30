@@ -38,6 +38,11 @@ $(TARGET_DEBUG): .$(SEP)src$(SEP)*.as
 	$(MXMLC) $(CFLAGS) $(CFLAGS_DEBUG) -compiler.source-path=.$(SEP)src$(SEP) \
 		-o $@ .$(SEP)src$(SEP)Main.as
 
+WEBDIR=../../euske.github.io/vgaplayer/
+publish: $(TARGET)
+	-$(CP) $(TARGET) $(WEBDIR)
+	-$(CP) docs/*.html docs/*.png docs/*.css $(WEBDIR)
+
 # testing
 LIVE_URL=tabesugi:public/file/sbt.tabesugi.net/live/
 CONTENTS=$(TARGET) index.html
