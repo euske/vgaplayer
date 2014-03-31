@@ -325,11 +325,11 @@ public class Main extends Sprite
       _control.statusDisplay.visible = false;
       _control.seekBar.duration = _videoduration;
       _control.seekBar.visible = true;
-      _control.seekBar.locked = false;
+      _control.seekBar.unlock();
     } else {
       _control.statusDisplay.visible = true;
       _control.seekBar.visible = false;
-      _control.seekBar.locked = false;
+      _control.seekBar.unlock();
     }
   }
 
@@ -349,7 +349,6 @@ public class Main extends Sprite
   private function onSeekBarChanged(e:Event):void
   {
     var seekbar:SeekBar = SeekBar(e.target);
-    seekbar.locked = true;
     if (_stream != null) {
       _stream.seek(seekbar.time);
     }
@@ -978,10 +977,22 @@ class SeekBar extends Slider
   public var margin:int = 4;
   public var barSize:int = 2;
 
+  private var _text:TextField;
   private var _duration:Number = 0;
   private var _locked:Boolean = false;
   private var _time:Number = 0;
   private var _goal:Number = 0;
+
+  public function SeekBar()
+  {
+    super();
+    _text = new TextField();
+    _text.x = margin;
+    _text.selectable = false;
+    _text.autoSize = TextFieldAutoSize.LEFT;
+    _text.text = "0:00:00";
+    addChild(_text);
+  }
   
   protected override function onMouseDownLocal(e:MouseEvent):void 
   {
@@ -1003,10 +1014,16 @@ class SeekBar extends Slider
 
   private function updateGoal(x:int):void
   {
-    var w:int = (width-margin*2);
-    var v:Number = (x-margin)/w;
+    var w:int = (width-margin-leftMargin);
+    var v:Number = (x-leftMargin)/w;
+    _locked = true;
     _goal = Math.max(0, Math.min(1, v));
     invalidate();
+  }
+
+  public function get leftMargin():int
+  {
+    return (margin*2+_text.textWidth);
   }
 
   public function get duration():Number
@@ -1017,17 +1034,6 @@ class SeekBar extends Slider
   public function set duration(v:Number):void
   {
     _duration = v;
-    invalidate();
-  }
-
-  public function get locked():Boolean
-  {
-    return _locked;
-  }
-
-  public function set locked(v:Boolean):void
-  {
-    _locked = v;
     invalidate();
   }
 
@@ -1045,6 +1051,12 @@ class SeekBar extends Slider
     return (v * duration);
   }
 
+  public function unlock():void
+  {
+    _locked = false;
+    invalidate();
+  }
+
   public override function repaint():void
   {
     super.repaint();
@@ -1052,12 +1064,23 @@ class SeekBar extends Slider
     var color:uint = (highlit)? hiColor : fgColor;
     var value:Number = (_locked)? _goal : _time;
 
-    var w:int = (width-margin*2);
+    var w:int = (width-margin-leftMargin);
     var h:int = (height-margin*2);
     graphics.beginFill(color, (color>>>24)/255);
-    graphics.drawRect(margin, (height-size)/2, w, size);
-    graphics.drawRect(margin+value*w-size, margin, size*2, h);
+    graphics.drawRect(leftMargin, (height-size)/2, w, size);
+    graphics.drawRect(leftMargin+value*w-size, margin, size*2, h);
     graphics.endFill();
+
+    var t:int = value * duration;
+    _text.text = (Math.floor(t/3600)+":"+
+		  format2(Math.floor(t/60)%60, "0")+":"+
+		  format2(t%60, "0"));
+    _text.textColor = color;
+  }
+
+  private function format2(v:int, c:String=" "):String
+  {
+    return ((v < 10)? c+v : String(v));
   }
 }
 
