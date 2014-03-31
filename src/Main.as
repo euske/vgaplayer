@@ -197,8 +197,7 @@ public class Main extends Sprite
     case "NetConnection.Connect.Failed":
     case "NetConnection.Connect.Rejected":
     case "NetConnection.Connect.InvalidApp":
-      _control.autohide = false;
-      _control.statusDisplay.text = "Failed";
+      _updateStatus(false, "Failed");
       break;
       
     case "NetConnection.Connect.Success":
@@ -215,53 +214,38 @@ public class Main extends Sprite
       _stream.maxPauseBufferTime = _params.maxPauseBufferTime;
       _video.attachNetStream(_stream);
       _updateVolume(_control.volumeSlider);
-      _control.autohide = false;
-      _control.statusDisplay.text = "Connected";
-      _playing = false;
+      _updateStatus(false, "Connected");
       startPlaying(_params.start);
       break;
 
     case "NetConnection.Connect.Closed":
       stopPlaying();
-      _playing = false;
       _video.attachNetStream(null);
       _stream.removeEventListener(NetStatusEvent.NET_STATUS, onNetStatusEvent);
       _stream.removeEventListener(AsyncErrorEvent.ASYNC_ERROR, onAsyncErrorEvent);
       _stream.client = null;
       _stream = null;
-      _control.autohide = false;
-      _control.statusDisplay.text = "Disconnected";
+      _updateStatus(false, "Disconnected");
       break;
 
     case "NetStream.Play.Start":
-      _playing = false;
-      _control.autohide = false;
       _control.playButton.toPlay = false;
-      _control.statusDisplay.text = "Buffering...";
-      _updateStatus();
+      _updateStatus(false, "Buffering...");
       break;
 
     case "NetStream.Play.Stop":
     case "NetStream.Play.Complete":
     case "NetStream.Buffer.Flush":
-      _playing = false;
-      _control.autohide = false;
       _control.playButton.toPlay = true;
-      _control.statusDisplay.text = "Stopped";
-      _updateStatus();
+      _updateStatus(false, "Stopped");
       break;
 
     case "NetStream.Buffer.Empty":
-      _playing = false;
-      _control.autohide = false;
-      _control.statusDisplay.text = "Buffering...";
+      _updateStatus(false, "Buffering...");
       break;
 
     case "NetStream.Buffer.Full":
-      _playing = true;
-      _control.autohide = true;
-      _control.statusDisplay.text = "Playing";
-      _updateStatus();
+      _updateStatus(true, "Playing");
       break;
     }
   }
@@ -277,7 +261,7 @@ public class Main extends Sprite
     log("onMetaData:", expandAttrs(info));
     _videosize = new Point(info.width, info.height);
     _videoduration = info.duration;
-    _updateStatus();
+    _updateStatus(_playing);
     resize();
   }
 
@@ -319,17 +303,21 @@ public class Main extends Sprite
     }
   }
 
-  private function _updateStatus():void
+  private function _updateStatus(playing:Boolean, text:String=null):void
   {
+    _playing = playing;
     if (_playing && 0 < _videoduration) {
       _control.statusDisplay.visible = false;
       _control.seekBar.duration = _videoduration;
       _control.seekBar.visible = true;
-      _control.seekBar.unlock();
     } else {
       _control.statusDisplay.visible = true;
       _control.seekBar.visible = false;
-      _control.seekBar.unlock();
+    }
+    _control.seekBar.unlock();
+    _control.autohide = playing;
+    if (text != null) {
+      _control.statusDisplay.text = text;
     }
   }
 
