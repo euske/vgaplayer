@@ -52,16 +52,16 @@ public class Main extends Sprite
     stage.scaleMode = StageScaleMode.NO_SCALE;
     stage.align = StageAlign.TOP_LEFT;
 
-    _video = new Video();
-    _video.smoothing = _params.smoothing;
-    addChild(_video);
-
     if (_params.imageUrl != null) {
       _imageLoader = new Loader();
       _imageLoader.load(new URLRequest(_params.imageUrl));
       _imageLoader.contentLoaderInfo.addEventListener(Event.COMPLETE, onImageLoaded);
-      addChildAt(_imageLoader, 0);
+      addChild(_imageLoader);
     }
+
+    _video = new Video();
+    _video.smoothing = _params.smoothing;
+    addChild(_video);
 
     _overlay = new VideoOverlay();
     _overlay.buttonBgColor = _params.buttonBgColor;
