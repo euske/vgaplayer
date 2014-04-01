@@ -16,6 +16,8 @@ import flash.events.MouseEvent;
 import flash.events.FullScreenEvent;
 import flash.events.NetStatusEvent;
 import flash.events.AsyncErrorEvent;
+import flash.text.Font;
+import flash.text.TextFormat;
 import flash.media.Video;
 import flash.media.SoundTransform;
 import flash.net.NetConnection;
@@ -34,8 +36,9 @@ public class Main extends Sprite
   private var _overlay:VideoOverlay;
   private var _control:ControlBar;
   private var _debugdisp:DebugDisplay;
-
   private var _imageLoader:Loader;
+  private var _fontLoader:Loader;
+
   private var _connection:NetConnection;
   private var _stream:NetStream;
   private var _videosize:Point;
@@ -56,9 +59,14 @@ public class Main extends Sprite
 
     if (_params.imageUrl != null) {
       _imageLoader = new Loader();
-      _imageLoader.load(new URLRequest(_params.imageUrl));
       _imageLoader.contentLoaderInfo.addEventListener(Event.COMPLETE, onImageLoaded);
+      _imageLoader.load(new URLRequest(_params.imageUrl));
       addChild(_imageLoader);
+    }
+    if (_params.fontUrl != null) {
+      _fontLoader = new Loader();
+      _fontLoader.contentLoaderInfo.addEventListener(Event.COMPLETE, onFontLoaded);
+      _fontLoader.load(new URLRequest(_params.fontUrl));
     }
 
     _video = new Video();
@@ -282,6 +290,16 @@ public class Main extends Sprite
     resize();
   }
 
+  private function onFontLoaded(event:Event):void
+  {
+    var fonts:Class = event.target.applicationDomain.getDefinition("Fonts") as Class;
+    Font.registerFont(fonts.SeekBarFont);
+    Font.registerFont(fonts.StatusDisplayFont);
+    _control.seekBar.textFormat = new TextFormat("SeekBarFont", 12);
+    _control.statusDisplay.textFormat = new TextFormat("StatusDisplayFont", 12);
+    resize();
+  }
+
   private function onMetaData(info:Object):void
   {
     log("onMetaData:", expandAttrs(info));
@@ -487,6 +505,7 @@ import flash.events.MouseEvent;
 import flash.text.TextField;
 import flash.text.TextFieldType;
 import flash.text.TextFieldAutoSize;
+import flash.text.TextFormat;
 import flash.net.NetStream;
 import flash.net.NetStreamInfo;
 import flash.ui.Keyboard;
@@ -513,6 +532,7 @@ class Params
   public var buttonBorderColor:uint = 0x88ffffff;
   public var volumeMutedColor:uint = 0xffff0000;
   public var imageUrl:String = null;
+  public var fontUrl:String = null;
 
   public function Params(obj:Object)
   {
@@ -579,6 +599,10 @@ class Params
       // imageUrl
       if (obj.imageUrl) {
 	imageUrl = obj.imageUrl;
+      }
+      // fontUrl
+      if (obj.fontUrl) {
+	fontUrl = obj.fontUrl;
       }
     }
   }
@@ -815,7 +839,7 @@ class ControlBar extends Sprite
     statusDisplay = new StatusDisplay();
     addChild(statusDisplay);
   }
-
+  
   public function get autohide():Boolean
   {
     return _autohide;
@@ -984,8 +1008,14 @@ class SeekBar extends Slider
     _text.x = margin;
     _text.selectable = false;
     _text.autoSize = TextFieldAutoSize.LEFT;
-    _text.text = "0:00:00";
     addChild(_text);
+  }
+
+  public function set textFormat(format:TextFormat):void
+  {
+    _text.defaultTextFormat = format;
+    _text.embedFonts = true;
+    invalidate();
   }
   
   protected override function onMouseDownLocal(e:MouseEvent):void 
@@ -1017,7 +1047,7 @@ class SeekBar extends Slider
 
   public function get leftMargin():int
   {
-    return (margin*2+_text.textWidth);
+    return (margin+_text.width);
   }
 
   public function get duration():Number
@@ -1058,18 +1088,18 @@ class SeekBar extends Slider
     var color:uint = (highlit)? hiColor : fgColor;
     var value:Number = (_locked)? _goal : _time;
 
+    var t:int = value * duration;
+    _text.text = (Math.floor(t/3600)+":"+
+		  format2(Math.floor(t/60)%60, "0")+":"+
+		  format2(t%60, "0")+" ");
+    _text.textColor = color;
+
     var w:int = (width-margin-leftMargin);
     var h:int = (height-margin*2);
     graphics.beginFill(color, (color>>>24)/255);
     graphics.drawRect(leftMargin, (height-size)/2, w, size);
     graphics.drawRect(leftMargin+value*w-size, margin, size*2, h);
     graphics.endFill();
-
-    var t:int = value * duration;
-    _text.text = (Math.floor(t/3600)+":"+
-		  format2(Math.floor(t/60)%60, "0")+":"+
-		  format2(t%60, "0"));
-    _text.textColor = color;
   }
 
   private function format2(v:int, c:String=" "):String
@@ -1174,6 +1204,13 @@ class StatusDisplay extends Control
     addChild(_text);
   }
 
+  public function set textFormat(format:TextFormat):void
+  {
+    _text.defaultTextFormat = format;
+    _text.embedFonts = true;
+    invalidate();
+  }
+  
   public function get text():String
   {
     return _text.text;
