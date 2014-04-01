@@ -376,6 +376,20 @@ public class Main extends Sprite
 			  StageDisplayState.NORMAL);
   }
 
+  private function proportionalScaleToStage(obj:DisplayObject, size:Point):void
+  {
+    if (size != null) {
+      x = 0;
+      y = 0;
+      var r:Number = Math.min((stage.stageWidth / size.x),
+		        (stage.stageHeight / size.y));
+      obj.width = size.x*r;
+      obj.height = size.y*r;
+      obj.x = (stage.stageWidth - obj.width)/2;
+      obj.y = (stage.stageHeight - obj.height)/2;
+    }
+  }
+
   public function connect():void
   {
     if (_params.url != null && !_connection.connected) {
@@ -427,23 +441,9 @@ public class Main extends Sprite
     }
   }
 
-  public function proportionalScaleToStage(obj:DisplayObject, size:Point):void
-  {
-    log("resize:", stage.stageWidth+","+stage.stageHeight);
-    if (size != null) {
-      x = 0;
-      y = 0;
-      var r:Number = Math.min((stage.stageWidth / size.x),
-		        (stage.stageHeight / size.y));
-      obj.width = size.x*r;
-      obj.height = size.y*r;
-      obj.x = (stage.stageWidth - obj.width)/2;
-      obj.y = (stage.stageHeight - obj.height)/2;
-    }
-  }
-
   public function resize():void
   {
+    log("resize:", stage.stageWidth+","+stage.stageHeight);
 
     proportionalScaleToStage(_video, _videosize);
     proportionalScaleToStage(_imageLoader, _imagesize);
