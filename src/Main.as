@@ -28,6 +28,7 @@ import flash.geom.Point;
 //
 public class Main extends Sprite
 {
+  private var _basehref:String;
   private var _params:Params;
   private var _video:Video;
   private var _overlay:VideoOverlay;
@@ -46,7 +47,8 @@ public class Main extends Sprite
   public function Main()
   {
     var info:LoaderInfo = LoaderInfo(this.root.loaderInfo);
-    _params = new Params(info.loaderURL, info.parameters);
+    _basehref = info.loaderURL;
+    _params = new Params(info.parameters);
     
     stage.color = _params.bgColor;
     stage.scaleMode = StageScaleMode.NO_SCALE;
@@ -146,6 +148,30 @@ public class Main extends Sprite
       }
     }
     return x;
+  }
+
+  private function getRtmpURL(url:String, basehref:String):String
+  {
+    var i:int;
+    if (url.substr(0, 1) == "/") {
+      // if url starts with "/", it means a relative url.
+      i = basehref.indexOf("://");
+      if (0 < i) {
+	basehref = basehref.substring(i+3);
+	i = basehref.indexOf("/");
+	if (i < 0) {
+	  i = basehref.length;
+	}
+	url = "rtmp://"+basehref.substr(0, i)+url;
+      }
+    }
+    i = url.lastIndexOf("/");
+    return url.substr(0, i);
+  }
+
+  private function getStreamPath(url:String):String
+  {
+    return url.substr(url.lastIndexOf("/")+1);
   }
 
   private function onResize(e:Event):void
@@ -352,28 +378,30 @@ public class Main extends Sprite
 
   public function connect():void
   {
-    if (_params.rtmpURL != null && !_connection.connected) {
-      log("Connecting:", _params.rtmpURL);
+    if (_params.url != null && !_connection.connected) {
+      var rtmpURL:String = getRtmpURL(_params.url, _basehref);
+      log("Connecting:", rtmpURL);
       _control.statusDisplay.text = "Connecting...";
-      _connection.connect(_params.rtmpURL);
+      _connection.connect(rtmpURL);
     }
   }
 
   public function startPlaying(start:Number=-1):void
   {
-    if (_stream != null && _params.streamPath != null) {
-      log("Playing:", _params.streamPath);
+    if (_params.url != null && _stream != null) {
+      var streamPath:String = getStreamPath(_params.url);
+      log("Playing:", streamPath);
       _control.statusDisplay.text = "Starting...";
       if (start < 0) {
 	start = _control.seekBar.time;
       }
-      _stream.play(_params.streamPath, start);
+      _stream.play(streamPath, start);
     }
   }
 
   public function stopPlaying():void
   {
-    if (_stream != null && _params.streamPath != null) {
+    if (_params.url != null && _stream != null) {
       log("Stopping");
       _control.statusDisplay.text = "Stopping...";
       _playing = false;
@@ -475,8 +503,6 @@ class Params
   public var bufferTimeMax:Number = 1.0;
   public var maxPauseBufferTime:Number = 30.0;
   public var fullscreen:Boolean = false;
-  public var rtmpURL:String = null;
-  public var streamPath:String = null;
   public var smoothing:Boolean = false;
   public var start:Number = 0.0;
 
@@ -488,10 +514,8 @@ class Params
   public var volumeMutedColor:uint = 0xffff0000;
   public var imageUrl:String = null;
 
-  public function Params(baseurl:String, obj:Object)
+  public function Params(obj:Object)
   {
-    var i:int;
-
     if (obj != null) {
       // debug
       if (obj.debug) {
@@ -556,24 +580,6 @@ class Params
       if (obj.imageUrl) {
 	imageUrl = obj.imageUrl;
       }
-    }
-
-    if (url != null) {
-      if (url.substr(0, 1) == "/") {
-	// if url starts with "/", it means a relative url.
-	i = baseurl.indexOf("://");
-	if (0 < i) {
-	  baseurl = baseurl.substring(i+3);
-	  i = baseurl.indexOf("/");
-	  if (i < 0) {
-	    i = baseurl.length;
-	  }
-	  url = "rtmp://"+baseurl.substr(0, i)+url;
-	}
-      }
-      i = url.lastIndexOf("/");
-      rtmpURL = url.substr(0, i);
-      streamPath = url.substr(i+1);
     }
   }
 
