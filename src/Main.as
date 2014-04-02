@@ -24,7 +24,6 @@ import flash.net.NetConnection;
 import flash.net.NetStream;
 import flash.net.URLRequest;
 import flash.ui.Keyboard;
-import flash.geom.Point;
 
 //  Main 
 //
@@ -41,9 +40,7 @@ public class Main extends Sprite
 
   private var _connection:NetConnection;
   private var _stream:NetStream;
-  private var _videosize:Point;
-  private var _imagesize:Point;
-  private var _videoduration:Number;
+  private var _videoInfo:Object;
   private var _playing:Boolean;
 
   // Main()
@@ -286,7 +283,6 @@ public class Main extends Sprite
 
   private function onImageLoaded(event:Event):void
   {
-    _imagesize = new Point(_imageLoader.width, _imageLoader.height);
     resize();
   }
 
@@ -303,8 +299,7 @@ public class Main extends Sprite
   private function onMetaData(info:Object):void
   {
     log("onMetaData:", expandAttrs(info));
-    _videosize = new Point(info.width, info.height);
-    _videoduration = info.duration;
+    _videoInfo = info;
     _updateStatus(_playing);
     resize();
   }
@@ -350,9 +345,9 @@ public class Main extends Sprite
   private function _updateStatus(playing:Boolean, text:String=null):void
   {
     _playing = playing;
-    if (_playing && 0 < _videoduration) {
+    if (_playing && 0 < _videoInfo.duration) {
       _control.statusDisplay.visible = false;
-      _control.seekBar.duration = _videoduration;
+      _control.seekBar.duration = _videoInfo.duration;
       _control.seekBar.visible = true;
     } else {
       _control.statusDisplay.visible = true;
@@ -394,18 +389,14 @@ public class Main extends Sprite
 			  StageDisplayState.NORMAL);
   }
 
-  private function proportionalScaleToStage(obj:DisplayObject, size:Point):void
+  private function proportionalScaleToStage(obj:DisplayObject, w:int, h:int):void
   {
-    if (size != null) {
-      x = 0;
-      y = 0;
-      var r:Number = Math.min((stage.stageWidth / size.x),
-		        (stage.stageHeight / size.y));
-      obj.width = size.x*r;
-      obj.height = size.y*r;
-      obj.x = (stage.stageWidth - obj.width)/2;
-      obj.y = (stage.stageHeight - obj.height)/2;
-    }
+    var r:Number = Math.min((stage.stageWidth / w),
+			    (stage.stageHeight / h));
+    obj.width = w*r;
+    obj.height = h*r;
+    obj.x = (stage.stageWidth - obj.width)/2;
+    obj.y = (stage.stageHeight - obj.height)/2;
   }
 
   public function connect():void
@@ -463,8 +454,12 @@ public class Main extends Sprite
   {
     log("resize:", stage.stageWidth+","+stage.stageHeight);
 
-    proportionalScaleToStage(_video, _videosize);
-    proportionalScaleToStage(_imageLoader, _imagesize);
+    if (_videoInfo != null) {
+      proportionalScaleToStage(_video, _videoInfo.width, _videoInfo.height);
+    }
+    if (_imageLoader != null) {
+      proportionalScaleToStage(_imageLoader, _imageLoader.width, _imageLoader.height);
+    }
 
     _overlay.resize(stage.stageWidth, stage.stageHeight);
     _overlay.x = 0;
