@@ -16,8 +16,6 @@ import flash.events.MouseEvent;
 import flash.events.FullScreenEvent;
 import flash.events.NetStatusEvent;
 import flash.events.AsyncErrorEvent;
-import flash.text.Font;
-import flash.text.TextFormat;
 import flash.media.Video;
 import flash.media.SoundTransform;
 import flash.net.NetConnection;
@@ -36,7 +34,6 @@ public class Main extends Sprite
   private var _control:ControlBar;
   private var _debugdisp:DebugDisplay;
   private var _imageLoader:Loader;
-  private var _fontLoader:Loader;
 
   private var _connection:NetConnection;
   private var _stream:NetStream;
@@ -59,11 +56,6 @@ public class Main extends Sprite
       _imageLoader.contentLoaderInfo.addEventListener(Event.COMPLETE, onImageLoaded);
       _imageLoader.load(new URLRequest(_params.imageUrl));
       addChild(_imageLoader);
-    }
-    if (_params.fontUrl != null) {
-      _fontLoader = new Loader();
-      _fontLoader.contentLoaderInfo.addEventListener(Event.COMPLETE, onFontLoaded);
-      _fontLoader.load(new URLRequest(_params.fontUrl));
     }
 
     _video = new Video();
@@ -283,16 +275,6 @@ public class Main extends Sprite
 
   private function onImageLoaded(event:Event):void
   {
-    resize();
-  }
-
-  private function onFontLoaded(event:Event):void
-  {
-    var fonts:Class = event.target.applicationDomain.getDefinition("Fonts") as Class;
-    Font.registerFont(fonts.SeekBarFont);
-    Font.registerFont(fonts.StatusDisplayFont);
-    _control.seekBar.textFormat = new TextFormat("SeekBarFont", 12);
-    _control.statusDisplay.textFormat = new TextFormat("StatusDisplayFont", 12);
     resize();
   }
 
@@ -527,7 +509,6 @@ class Params
   public var buttonBorderColor:uint = 0x88ffffff;
   public var volumeMutedColor:uint = 0xffff0000;
   public var imageUrl:String = null;
-  public var fontUrl:String = null;
 
   public function Params(obj:Object)
   {
@@ -594,10 +575,6 @@ class Params
       // imageUrl
       if (obj.imageUrl) {
 	imageUrl = obj.imageUrl;
-      }
-      // fontUrl
-      if (obj.fontUrl) {
-	fontUrl = obj.fontUrl;
       }
     }
   }
@@ -1006,10 +983,10 @@ class SeekBar extends Slider
     addChild(_text);
   }
 
-  public function set textFormat(format:TextFormat):void
+  public function setTextFormat(textFormat:TextFormat, embedFonts:Boolean=false):void
   {
-    _text.defaultTextFormat = format;
-    _text.embedFonts = true;
+    _text.defaultTextFormat = textFormat;
+    _text.embedFonts = embedFonts;
     invalidate();
   }
   
@@ -1199,10 +1176,10 @@ class StatusDisplay extends Control
     addChild(_text);
   }
 
-  public function set textFormat(format:TextFormat):void
+  public function setTextFormat(textFormat:TextFormat, embedFonts:Boolean=false):void
   {
-    _text.defaultTextFormat = format;
-    _text.embedFonts = true;
+    _text.defaultTextFormat = textFormat;
+    _text.embedFonts = embedFonts;
     invalidate();
   }
   
