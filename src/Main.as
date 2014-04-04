@@ -1,4 +1,5 @@
 //  VGAPlayer
+//  TODO: arrow key navigation
 //
 
 package {
@@ -206,6 +207,7 @@ public class Main extends Sprite
 
   private function onKeyDown(e:KeyboardEvent):void 
   {
+    _control.show();
     switch (e.keyCode) {
     case Keyboard.ESCAPE:	// Esc
     case 68:			// D
@@ -213,7 +215,6 @@ public class Main extends Sprite
       break;
     case Keyboard.SPACE:
       changePlayState(_control.playButton.toPlay);
-      _control.show();
       break;
     }
   }
@@ -225,7 +226,7 @@ public class Main extends Sprite
     case "NetConnection.Connect.Failed":
     case "NetConnection.Connect.Rejected":
     case "NetConnection.Connect.InvalidApp":
-      _updateStatus(STOPPED, "Failed");
+      updateStatus(STOPPED, "Failed");
       break;
       
     case "NetConnection.Connect.Success":
@@ -241,8 +242,8 @@ public class Main extends Sprite
       _stream.bufferTimeMax = _params.bufferTimeMax;
       _stream.maxPauseBufferTime = _params.maxPauseBufferTime;
       _video.attachNetStream(_stream);
-      _updateVolume(_control.volumeSlider);
-      _updateStatus(STOPPED, "Connected");
+      updateVolume(_control.volumeSlider);
+      updateStatus(STOPPED, "Connected");
       startPlaying(_params.start);
       break;
 
@@ -253,13 +254,13 @@ public class Main extends Sprite
       _stream.removeEventListener(AsyncErrorEvent.ASYNC_ERROR, onAsyncErrorEvent);
       _stream.client = null;
       _stream = null;
-      _updateStatus(STOPPED, "Disconnected");
+      updateStatus(STOPPED, "Disconnected");
       break;
 
     case "NetStream.Play.Start":
       _overlay.toPlay = false;
       _control.playButton.toPlay = false;
-      _updateStatus(STARTING, "Buffering...");
+      updateStatus(STARTING, "Buffering...");
       break;
 
     case "NetStream.Play.Stop":
@@ -267,15 +268,15 @@ public class Main extends Sprite
     case "NetStream.Buffer.Flush":
       _overlay.toPlay = true;
       _control.playButton.toPlay = true;
-      _updateStatus(STOPPED, "Stopped");
+      updateStatus(STOPPED, "Stopped");
       break;
 
     case "NetStream.Buffer.Empty":
-      _updateStatus(STARTING, "Buffering...");
+      updateStatus(STARTING, "Buffering...");
       break;
 
     case "NetStream.Buffer.Full":
-      _updateStatus(STARTED, "Playing");
+      updateStatus(STARTED, "Playing");
       break;
     }
   }
@@ -289,7 +290,7 @@ public class Main extends Sprite
   {
     log("onMetaData:", expandAttrs(info));
     _videoInfo = info;
-    _updateStatus(_state);
+    updateStatus(_state);
     resize();
   }
 
@@ -321,44 +322,17 @@ public class Main extends Sprite
     changePlayState(button.toPlay);
   }
 
-  private function _updateVolume(slider:VolumeSlider):void
-  {
-    if (_stream != null) {
-      var transform:SoundTransform = 
-	new SoundTransform((slider.muted)? 0 : slider.value);
-      _stream.soundTransform = transform;
-    }
-  }
-
-  private function _updateStatus(state:String, text:String=null):void
-  {
-    _state = state;
-    if (_state == STARTED && 0 < _videoInfo.duration) {
-      _control.statusDisplay.visible = false;
-      _control.seekBar.duration = _videoInfo.duration;
-      _control.seekBar.visible = true;
-    } else {
-      _control.statusDisplay.visible = true;
-      _control.seekBar.visible = false;
-    }
-    _control.seekBar.unlock();
-    _control.autohide = (state == STARTED);
-    if (text != null) {
-      _control.statusDisplay.text = text;
-    }
-  }
-
   private function onVolumeSliderClick(e:Event):void
   {
     var slider:VolumeSlider = VolumeSlider(e.target);
     slider.muted = !slider.muted;
-    _updateVolume(slider);
+    updateVolume(slider);
   }
   
   private function onVolumeSliderChanged(e:Event):void
   {
     var slider:VolumeSlider = VolumeSlider(e.target);
-    _updateVolume(slider);
+    updateVolume(slider);
   }
 
   private function onSeekBarChanged(e:Event):void
@@ -385,6 +359,54 @@ public class Main extends Sprite
     obj.height = h*r;
     obj.x = (stage.stageWidth - obj.width)/2;
     obj.y = (stage.stageHeight - obj.height)/2;
+  }
+
+  private function updateVolume(slider:VolumeSlider):void
+  {
+    if (_stream != null) {
+      var transform:SoundTransform = 
+	new SoundTransform((slider.muted)? 0 : slider.value);
+      _stream.soundTransform = transform;
+    }
+  }
+
+  private function updateStatus(state:String, text:String=null):void
+  {
+    _state = state;
+    if (_state == STARTED && 0 < _videoInfo.duration) {
+      _control.statusDisplay.visible = false;
+      _control.seekBar.duration = _videoInfo.duration;
+      _control.seekBar.visible = true;
+    } else {
+      _control.statusDisplay.visible = true;
+      _control.seekBar.visible = false;
+    }
+    _control.seekBar.unlock();
+    _control.autohide = (state == STARTED);
+    if (text != null) {
+      _control.statusDisplay.text = text;
+    }
+  }
+
+  private function changePlayState(playing:Boolean):void
+  {
+    log("changePlayState:", playing);
+    switch (_state) {
+    case STOPPED:
+      if (playing) {
+	if (_connection.connected) {
+	  startPlaying();
+	} else {
+	  connect();
+	}
+      }
+      break;
+    case STARTED:
+      if (!playing) {
+	stopPlaying();
+      }
+      break;
+    }
   }
 
   public function connect():void
@@ -417,27 +439,6 @@ public class Main extends Sprite
       _control.statusDisplay.text = "Stopping...";
       _stream.close();
       _state = STOPPING;
-    }
-  }
-
-  public function changePlayState(playing:Boolean):void
-  {
-    log("changePlayState:", playing);
-    switch (_state) {
-    case STOPPED:
-      if (playing) {
-	if (_connection.connected) {
-	  startPlaying();
-	} else {
-	  connect();
-	}
-      }
-      break;
-    case STARTED:
-      if (!playing) {
-	stopPlaying();
-      }
-      break;
     }
   }
 
