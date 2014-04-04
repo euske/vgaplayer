@@ -27,6 +27,11 @@ import flash.ui.Keyboard;
 //
 public class Main extends Sprite
 {
+  private const STARTING:String = "STARTING";
+  private const STARTED:String = "STARTED";
+  private const STOPPING:String = "STOPPING";
+  private const STOPPED:String = "STOPPED";
+  
   private var _basehref:String;
   private var _params:Params;
   private var _video:Video;
@@ -38,7 +43,7 @@ public class Main extends Sprite
   private var _connection:NetConnection;
   private var _stream:NetStream;
   private var _videoInfo:Object;
-  private var _playing:Boolean;
+  private var _state:String;
 
   // Main()
   public function Main()
@@ -207,7 +212,7 @@ public class Main extends Sprite
       _debugdisp.visible = !_debugdisp.visible;
       break;
     case Keyboard.SPACE:
-      setPlayState(!_playing);
+      changePlayState(_control.playButton.toPlay);
       _control.show();
       break;
     }
@@ -220,7 +225,7 @@ public class Main extends Sprite
     case "NetConnection.Connect.Failed":
     case "NetConnection.Connect.Rejected":
     case "NetConnection.Connect.InvalidApp":
-      _updateStatus(false, "Failed");
+      _updateStatus(STOPPED, "Failed");
       break;
       
     case "NetConnection.Connect.Success":
@@ -237,7 +242,7 @@ public class Main extends Sprite
       _stream.maxPauseBufferTime = _params.maxPauseBufferTime;
       _video.attachNetStream(_stream);
       _updateVolume(_control.volumeSlider);
-      _updateStatus(false, "Connected");
+      _updateStatus(STOPPED, "Connected");
       startPlaying(_params.start);
       break;
 
@@ -248,13 +253,13 @@ public class Main extends Sprite
       _stream.removeEventListener(AsyncErrorEvent.ASYNC_ERROR, onAsyncErrorEvent);
       _stream.client = null;
       _stream = null;
-      _updateStatus(false, "Disconnected");
+      _updateStatus(STOPPED, "Disconnected");
       break;
 
     case "NetStream.Play.Start":
       _overlay.toPlay = false;
       _control.playButton.toPlay = false;
-      _updateStatus(false, "Buffering...");
+      _updateStatus(STARTING, "Buffering...");
       break;
 
     case "NetStream.Play.Stop":
@@ -262,15 +267,15 @@ public class Main extends Sprite
     case "NetStream.Buffer.Flush":
       _overlay.toPlay = true;
       _control.playButton.toPlay = true;
-      _updateStatus(false, "Stopped");
+      _updateStatus(STOPPED, "Stopped");
       break;
 
     case "NetStream.Buffer.Empty":
-      _updateStatus(false, "Buffering...");
+      _updateStatus(STARTING, "Buffering...");
       break;
 
     case "NetStream.Buffer.Full":
-      _updateStatus(true, "Playing");
+      _updateStatus(STARTED, "Playing");
       break;
     }
   }
@@ -284,7 +289,7 @@ public class Main extends Sprite
   {
     log("onMetaData:", expandAttrs(info));
     _videoInfo = info;
-    _updateStatus(_playing);
+    _updateStatus(_state);
     resize();
   }
 
@@ -307,13 +312,13 @@ public class Main extends Sprite
   {  
     var overlay:OverlayButton = OverlayButton(e.target);
     overlay.show();
-    setPlayState(overlay.toPlay);
+    changePlayState(overlay.toPlay);
   }
 
   private function onPlayPauseClick(e:Event):void
   {
     var button:PlayPauseButton = PlayPauseButton(e.target);
-    setPlayState(button.toPlay);
+    changePlayState(button.toPlay);
   }
 
   private function _updateVolume(slider:VolumeSlider):void
@@ -325,10 +330,10 @@ public class Main extends Sprite
     }
   }
 
-  private function _updateStatus(playing:Boolean, text:String=null):void
+  private function _updateStatus(state:String, text:String=null):void
   {
-    _playing = playing;
-    if (_playing && 0 < _videoInfo.duration) {
+    _state = state;
+    if (_state == STARTED && 0 < _videoInfo.duration) {
       _control.statusDisplay.visible = false;
       _control.seekBar.duration = _videoInfo.duration;
       _control.seekBar.visible = true;
@@ -337,7 +342,7 @@ public class Main extends Sprite
       _control.seekBar.visible = false;
     }
     _control.seekBar.unlock();
-    _control.autohide = playing;
+    _control.autohide = (state == STARTED);
     if (text != null) {
       _control.statusDisplay.text = text;
     }
@@ -410,26 +415,29 @@ public class Main extends Sprite
     if (_params.url != null && _stream != null) {
       log("Stopping");
       _control.statusDisplay.text = "Stopping...";
-      _playing = false;
       _stream.close();
+      _state = STOPPING;
     }
   }
 
-  public function setPlayState(playing:Boolean):void
+  public function changePlayState(playing:Boolean):void
   {
-    log("setPlayState:", playing);
-    if (playing) {
-      if (_playing) {
-
-      } else if (_connection.connected) {
-	startPlaying();
-      } else {
-	connect();
+    log("changePlayState:", playing);
+    switch (_state) {
+    case STOPPED:
+      if (playing) {
+	if (_connection.connected) {
+	  startPlaying();
+	} else {
+	  connect();
+	}
       }
-    } else {
-      if (_playing) {
+      break;
+    case STARTED:
+      if (!playing) {
 	stopPlaying();
       }
+      break;
     }
   }
 
@@ -462,7 +470,7 @@ public class Main extends Sprite
     _overlay.update();
     _control.update();
     if (_stream != null) {
-      if (_playing) {
+      if (_state == STARTED) {
 	_control.seekBar.time = _stream.time;
       }
       if (_debugdisp.visible) {
