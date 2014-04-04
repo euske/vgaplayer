@@ -243,7 +243,6 @@ public class Main extends Sprite
       _stream.maxPauseBufferTime = _params.maxPauseBufferTime;
       _video.attachNetStream(_stream);
       updateVolume(_control.volumeSlider);
-      updateStatus(STOPPED, "Connected");
       startPlaying(_params.start);
       break;
 
@@ -260,23 +259,25 @@ public class Main extends Sprite
     case "NetStream.Play.Start":
       _overlay.toPlay = false;
       _control.playButton.toPlay = false;
-      updateStatus(STARTING, "Buffering...");
+      updateStatus(STARTING);
       break;
 
     case "NetStream.Play.Stop":
     case "NetStream.Play.Complete":
     case "NetStream.Buffer.Flush":
-      _overlay.toPlay = true;
-      _control.playButton.toPlay = true;
-      updateStatus(STOPPED, "Stopped");
+      updateStatus(STOPPED);
       break;
 
     case "NetStream.Buffer.Empty":
-      updateStatus(STARTING, "Buffering...");
+      updateStatus(STARTING);
       break;
 
     case "NetStream.Buffer.Full":
-      updateStatus(STARTED, "Playing");
+      if (_state == STOPPING) {
+	stopPlaying();
+      } else {
+	updateStatus(STARTED);
+      }
       break;
     }
   }
@@ -373,25 +374,66 @@ public class Main extends Sprite
   private function updateStatus(state:String, text:String=null):void
   {
     _state = state;
-    if (_state == STARTED && 0 < _videoInfo.duration) {
-      _control.statusDisplay.visible = false;
-      _control.seekBar.duration = _videoInfo.duration;
-      _control.seekBar.visible = true;
-    } else {
-      _control.statusDisplay.visible = true;
-      _control.seekBar.visible = false;
+    switch (_state) {
+    case STARTING:
+      _overlay.toPlay = false;
+      _control.playButton.toPlay = false;
+      _control.autohide = false;
+      if (text == null) {
+	text = "Starting...";
+      }
+      break;
+    case STARTED:
+      if (0 < _videoInfo.duration) {
+	_control.statusDisplay.visible = false;
+	_control.seekBar.duration = _videoInfo.duration;
+	_control.seekBar.visible = true;
+      } else {
+	_control.statusDisplay.visible = true;
+	_control.seekBar.visible = false;
+      }
+      _control.seekBar.unlock();
+      _overlay.toPlay = false;
+      _control.playButton.toPlay = false;
+      _control.autohide = true;
+      if (text == null) {
+	text = "Playing";
+      }
+      break;
+    case STOPPING:
+      _overlay.toPlay = false;
+      _control.playButton.toPlay = false;
+      _control.autohide = false;
+      if (text == null) {
+	text = "Stopping...";
+      }
+      break;
+    case STOPPED:
+      _overlay.toPlay = true;
+      _control.playButton.toPlay = false;
+      _control.autohide = false;
+      if (text == null) {
+	text = "Stopped";
+      }
+      break;
     }
-    _control.seekBar.unlock();
-    _control.autohide = (state == STARTED);
-    if (text != null) {
-      _control.statusDisplay.text = text;
-    }
+    _control.statusDisplay.text = text;
   }
 
   private function changePlayState(playing:Boolean):void
   {
     log("changePlayState:", playing);
     switch (_state) {
+    case STARTING:
+      if (!playing) {
+	updateStatus(STOPPING);
+      }
+      break;
+    case STARTED:
+      if (!playing) {
+	stopPlaying();
+      }
+      break;
     case STOPPED:
       if (playing) {
 	if (_connection.connected) {
@@ -399,11 +441,6 @@ public class Main extends Sprite
 	} else {
 	  connect();
 	}
-      }
-      break;
-    case STARTED:
-      if (!playing) {
-	stopPlaying();
       }
       break;
     }
@@ -424,7 +461,7 @@ public class Main extends Sprite
     if (_params.url != null && _stream != null) {
       var streamPath:String = getStreamPath(_params.url);
       log("Playing:", streamPath);
-      _control.statusDisplay.text = "Starting...";
+      updateStatus(STARTING);
       if (start < 0) {
 	start = _control.seekBar.time;
       }
@@ -436,9 +473,8 @@ public class Main extends Sprite
   {
     if (_params.url != null && _stream != null) {
       log("Stopping");
-      _control.statusDisplay.text = "Stopping...";
+      updateStatus(STOPPING);
       _stream.close();
-      _state = STOPPING;
     }
   }
 
