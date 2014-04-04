@@ -30,7 +30,7 @@ public class Main extends Sprite
   private var _basehref:String;
   private var _params:Params;
   private var _video:Video;
-  private var _overlay:VideoOverlay;
+  private var _overlay:OverlayButton;
   private var _control:ControlBar;
   private var _debugdisp:DebugDisplay;
   private var _imageLoader:Loader;
@@ -62,7 +62,7 @@ public class Main extends Sprite
     _video.smoothing = _params.smoothing;
     addChild(_video);
 
-    _overlay = new VideoOverlay();
+    _overlay = new OverlayButton();
     _overlay.buttonBgColor = _params.buttonBgColor;
     _overlay.buttonFgColor = _params.buttonFgColor;
     _overlay.addEventListener(MouseEvent.CLICK, onOverlayClick);
@@ -252,6 +252,7 @@ public class Main extends Sprite
       break;
 
     case "NetStream.Play.Start":
+      _overlay.toPlay = false;
       _control.playButton.toPlay = false;
       _updateStatus(false, "Buffering...");
       break;
@@ -259,6 +260,7 @@ public class Main extends Sprite
     case "NetStream.Play.Stop":
     case "NetStream.Play.Complete":
     case "NetStream.Buffer.Flush":
+      _overlay.toPlay = true;
       _control.playButton.toPlay = true;
       _updateStatus(false, "Stopped");
       break;
@@ -303,10 +305,9 @@ public class Main extends Sprite
 
   private function onOverlayClick(e:MouseEvent):void 
   {  
-    var overlay:VideoOverlay = VideoOverlay(e.target);
-    var playing:Boolean = !_playing;
-    overlay.show(playing);
-    setPlayState(playing);
+    var overlay:OverlayButton = OverlayButton(e.target);
+    overlay.show();
+    setPlayState(overlay.toPlay);
   }
 
   private function onPlayPauseClick(e:Event):void
@@ -1208,10 +1209,10 @@ class StatusDisplay extends Control
 }
 
 
-//  VideoOverlay
+//  OverlayButton
 //  A transparent button shown over the video.
 //
-class VideoOverlay extends Sprite
+class OverlayButton extends Sprite
 {
   public var buttonSize:int = 100;
   public var fadeDuration:int = 2000;
@@ -1221,13 +1222,23 @@ class VideoOverlay extends Sprite
   private var _size:int;
   private var _width:int;
   private var _height:int;
-  private var _playing:Boolean;
+  private var _toPlay:Boolean;
   private var _timeout:int;
 
-  public function VideoOverlay()
+  public function OverlayButton()
   {
     _timeout = -fadeDuration;
     alpha = 0;
+  }
+
+  public function get toPlay():Boolean
+  {
+    return _toPlay;
+  }
+
+  public function set toPlay(value:Boolean):void
+  {
+    _toPlay = value;
   }
 
   public function resize(w:int, h:int):void
@@ -1237,9 +1248,8 @@ class VideoOverlay extends Sprite
     repaint();
   }
   
-  public function show(playing:Boolean):void
+  public function show():void
   {
-    _playing = playing;
     _timeout = getTimer();
     repaint();
   }
@@ -1258,7 +1268,7 @@ class VideoOverlay extends Sprite
     graphics.beginFill(buttonBgColor, (buttonBgColor>>>24)/255);
     graphics.drawRect(cx-buttonSize/2, cy-buttonSize/2, buttonSize, buttonSize);
     graphics.endFill();
-    if (_playing) {
+    if (_toPlay) {
       graphics.beginFill(buttonFgColor, (buttonFgColor>>>24)/255);
       graphics.moveTo(cx-size*4, cy-size*4);
       graphics.lineTo(cx-size*4, cy+size*4);
