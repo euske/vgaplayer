@@ -214,7 +214,7 @@ public class Main extends Sprite
       _debugdisp.visible = !_debugdisp.visible;
       break;
     case Keyboard.SPACE:
-      changePlayState(_control.playButton.toPlay);
+      setPlayState(_control.playButton.toPlay);
       break;
     }
   }
@@ -314,13 +314,13 @@ public class Main extends Sprite
   {  
     var overlay:OverlayButton = OverlayButton(e.target);
     overlay.show();
-    changePlayState(overlay.toPlay);
+    setPlayState(overlay.toPlay);
   }
 
   private function onPlayPauseClick(e:Event):void
   {
     var button:PlayPauseButton = PlayPauseButton(e.target);
-    changePlayState(button.toPlay);
+    setPlayState(button.toPlay);
   }
 
   private function onVolumeSliderClick(e:Event):void
@@ -339,9 +339,7 @@ public class Main extends Sprite
   private function onSeekBarChanged(e:Event):void
   {
     var seekbar:SeekBar = SeekBar(e.target);
-    if (_stream != null) {
-      _stream.seek(seekbar.time);
-    }
+    updatePlayTime(seekbar.time);
   }
 
   private function onFullscreenClick(e:Event):void
@@ -371,6 +369,13 @@ public class Main extends Sprite
     }
   }
 
+  private function updatePlayTime(t:Number):void
+  {
+    if (_stream != null) {
+      _stream.seek(t);
+    }
+  }
+
   private function updateStatus(state:String, text:String=null):void
   {
     _state = state;
@@ -383,15 +388,8 @@ public class Main extends Sprite
 	text = "Starting...";
       }
       break;
+
     case STARTED:
-      if (0 < _videoInfo.duration) {
-	_control.statusDisplay.visible = false;
-	_control.seekBar.duration = _videoInfo.duration;
-	_control.seekBar.visible = true;
-      } else {
-	_control.statusDisplay.visible = true;
-	_control.seekBar.visible = false;
-      }
       _control.seekBar.unlock();
       _overlay.toPlay = false;
       _control.playButton.toPlay = false;
@@ -400,6 +398,7 @@ public class Main extends Sprite
 	text = "Playing";
       }
       break;
+
     case STOPPING:
       _overlay.toPlay = false;
       _control.playButton.toPlay = false;
@@ -408,6 +407,7 @@ public class Main extends Sprite
 	text = "Stopping...";
       }
       break;
+
     case STOPPED:
       _overlay.toPlay = true;
       _control.playButton.toPlay = false;
@@ -417,12 +417,21 @@ public class Main extends Sprite
       }
       break;
     }
+
     _control.statusDisplay.text = text;
+    if (0 < _videoInfo.duration) {
+      _control.statusDisplay.visible = false;
+      _control.seekBar.duration = _videoInfo.duration;
+      _control.seekBar.visible = true;
+    } else {
+      _control.statusDisplay.visible = true;
+      _control.seekBar.visible = false;
+    }
   }
 
-  private function changePlayState(playing:Boolean):void
+  public function setPlayState(playing:Boolean):void
   {
-    log("changePlayState:", playing);
+    log("setPlayState:", playing);
     switch (_state) {
     case STARTING:
       if (!playing) {
@@ -456,7 +465,7 @@ public class Main extends Sprite
     }
   }
 
-  public function startPlaying(start:Number=-1):void
+  private function startPlaying(start:Number=-1):void
   {
     if (_params.url != null && _stream != null) {
       var streamPath:String = getStreamPath(_params.url);
@@ -469,7 +478,7 @@ public class Main extends Sprite
     }
   }
 
-  public function stopPlaying():void
+  private function stopPlaying():void
   {
     if (_params.url != null && _stream != null) {
       log("Stopping");
