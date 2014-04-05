@@ -291,6 +291,12 @@ public class Main extends Sprite
   {
     log("onMetaData:", expandAttrs(info));
     _videoInfo = info;
+    if (0 < _videoInfo.duration) {
+      // Show the seek bar when the video duration is defined.
+      _control.statusDisplay.visible = false;
+      _control.seekBar.duration = _videoInfo.duration;
+      _control.seekBar.visible = true;
+    }
     updateStatus(_state);
     resize();
   }
@@ -417,14 +423,6 @@ public class Main extends Sprite
     }
 
     _control.statusDisplay.text = text;
-    if (0 < _videoInfo.duration) {
-      _control.statusDisplay.visible = false;
-      _control.seekBar.duration = _videoInfo.duration;
-      _control.seekBar.visible = true;
-    } else {
-      _control.statusDisplay.visible = true;
-      _control.seekBar.visible = false;
-    }
   }
 
   public function setPlayState(playing:Boolean):void
