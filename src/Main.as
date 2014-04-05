@@ -383,7 +383,6 @@ public class Main extends Sprite
     case STARTING:
       _overlay.toPlay = false;
       _control.playButton.toPlay = false;
-      _control.autohide = false;
       if (text == null) {
 	text = "Starting...";
       }
@@ -402,7 +401,6 @@ public class Main extends Sprite
     case STOPPING:
       _overlay.toPlay = false;
       _control.playButton.toPlay = false;
-      _control.autohide = false;
       if (text == null) {
 	text = "Stopping...";
       }
@@ -469,11 +467,11 @@ public class Main extends Sprite
   {
     if (_params.url != null && _stream != null) {
       var streamPath:String = getStreamPath(_params.url);
-      log("Playing:", streamPath);
       updateStatus(STARTING);
       if (start < 0) {
 	start = _control.seekBar.time;
       }
+      log("Starting:", streamPath, start);
       _stream.play(streamPath, start);
     }
   }
@@ -875,7 +873,6 @@ class ControlBar extends Sprite
   public function set autohide(value:Boolean):void
   {
     _autohide = value;
-    show();
   }
 
   public function show(duration:int=2000):void
