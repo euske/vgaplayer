@@ -456,7 +456,7 @@ public class Main extends Sprite
 
     case STOPPED:
       _overlay.toPlay = true;
-      _control.playButton.toPlay = false;
+      _control.playButton.toPlay = true;
       _control.autohide = false;
       if (text == null) {
 	text = "Stopped";
