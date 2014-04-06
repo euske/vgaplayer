@@ -32,8 +32,8 @@ public class Main extends Sprite
   private const STOPPING:String = "STOPPING";
   private const STOPPED:String = "STOPPED";
   
-  private var _basehref:String;
   private var _params:Params;
+  private var _url:String;
   private var _video:Video;
   private var _overlay:OverlayButton;
   private var _control:ControlBar;
@@ -49,8 +49,8 @@ public class Main extends Sprite
   public function Main()
   {
     var info:LoaderInfo = LoaderInfo(this.root.loaderInfo);
-    _basehref = info.loaderURL;
     _params = new Params(info.parameters);
+    _url = getBaseURL(_params.url);
     
     stage.color = _params.bgColor;
     stage.scaleMode = StageScaleMode.NO_SCALE;
@@ -154,28 +154,23 @@ public class Main extends Sprite
     return x;
   }
 
-  private function getRtmpURL(url:String, basehref:String):String
+  private function getBaseURL(url:String, proto:String="rtmp"):String
   {
-    var i:int;
-    if (url.substr(0, 1) == "/") {
+    if (url != null && url.substr(0, 1) == "/") {
       // if url starts with "/", it means a relative url.
-      i = basehref.indexOf("://");
+      var info:LoaderInfo = LoaderInfo(this.root.loaderInfo);
+      var basehref:String = info.loaderURL;
+      var i:int = basehref.indexOf("://");
       if (0 < i) {
 	basehref = basehref.substring(i+3);
 	i = basehref.indexOf("/");
 	if (i < 0) {
 	  i = basehref.length;
 	}
-	url = "rtmp://"+basehref.substr(0, i)+url;
+	url = proto+"://"+basehref.substr(0, i)+url;
       }
     }
-    i = url.lastIndexOf("/");
-    return url.substr(0, i);
-  }
-
-  private function getStreamPath(url:String):String
-  {
-    return url.substr(url.lastIndexOf("/")+1);
+    return url;
   }
 
   private function onResize(e:Event):void
@@ -453,8 +448,11 @@ public class Main extends Sprite
 
   private function startPlaying(start:Number=-1):void
   {
-    if (_params.url != null && _stream != null) {
-      var streamPath:String = getStreamPath(_params.url);
+    if (_url != null && _stream != null) {
+      var streamPath:String = _url;
+      if (_url.substring(0, 5) == "rtmp:") {
+	streamPath = _url.substr(_url.lastIndexOf("/")+1);
+      }
       updateStatus(STARTING);
       if (start < 0) {
 	start = _control.seekBar.time;
@@ -466,7 +464,7 @@ public class Main extends Sprite
 
   private function stopPlaying():void
   {
-    if (_params.url != null && _stream != null) {
+    if (_stream != null) {
       log("Stopping");
       updateStatus(STOPPING);
       _stream.close();
@@ -513,11 +511,15 @@ public class Main extends Sprite
 
   public function connect():void
   {
-    if (_params.url != null && !_connection.connected) {
-      var rtmpURL:String = getRtmpURL(_params.url, _basehref);
-      log("Connecting:", rtmpURL);
+    if (_url != null && !_connection.connected) {
+      var url:String = null;
+      if (_url.substring(0, 5) == "rtmp:") {
+	var i:int = url.lastIndexOf("/");
+	url = url.substr(0, i);
+      }
+      log("Connecting:", url);
       _control.statusDisplay.text = "Connecting...";
-      _connection.connect(rtmpURL);
+      _connection.connect(url);
     }
   }
 
