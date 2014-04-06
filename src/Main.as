@@ -115,7 +115,7 @@ public class Main extends Sprite
     resize();
 
     log("FlashVars:", expandAttrs(info.parameters));
-    log("url:", _params.url);
+    log("url:", _url);
     log("fullscreen:", _params.fullscreen);
     log("bufferTime:", _params.bufferTime);
     log("bufferTimeMax:", _params.bufferTimeMax);
@@ -456,7 +456,7 @@ public class Main extends Sprite
   {
     if (_url != null && _stream != null) {
       var streamPath:String = _url;
-      if (_url.substring(0, 5) == "rtmp:") {
+      if (_url.substr(0, 5) == "rtmp:") {
 	streamPath = _url.substr(_url.lastIndexOf("/")+1);
       }
       updateStatus(STARTING);
@@ -519,9 +519,9 @@ public class Main extends Sprite
   {
     if (_url != null && !_connection.connected) {
       var url:String = null;
-      if (_url.substring(0, 5) == "rtmp:") {
-	var i:int = url.lastIndexOf("/");
-	url = url.substr(0, i);
+      if (_url.substr(0, 5) == "rtmp:") {
+	var i:int = _url.lastIndexOf("/");
+	url = _url.substr(0, i);
       }
       log("Connecting:", url);
       _control.statusDisplay.text = "Connecting...";
