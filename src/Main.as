@@ -408,22 +408,6 @@ public class Main extends Sprite
     }
   }
 
-  private function seek(t:Number):void
-  {
-    log("seek:", t);
-    if (_stream != null) {
-      _stream.seek(t);
-    }
-  }
-
-  private function seekDelta(dt:Number):void
-  {
-    log("seekDelta:", dt);
-    if (_stream != null) {
-      _stream.seek(_stream.time + dt);
-    }
-  }
-
   private function updateStatus(state:String, text:String=null):void
   {
     _state = state;
@@ -467,6 +451,76 @@ public class Main extends Sprite
     _control.statusDisplay.text = text;
   }
 
+  private function startPlaying(start:Number=-1):void
+  {
+    if (_params.url != null && _stream != null) {
+      var streamPath:String = getStreamPath(_params.url);
+      updateStatus(STARTING);
+      if (start < 0) {
+	start = _control.seekBar.time;
+      }
+      log("Starting:", streamPath, start);
+      _stream.play(streamPath, start);
+    }
+  }
+
+  private function stopPlaying():void
+  {
+    if (_params.url != null && _stream != null) {
+      log("Stopping");
+      updateStatus(STOPPING);
+      _stream.close();
+    }
+  }
+
+  private function resize():void
+  {
+    log("resize:", stage.stageWidth+","+stage.stageHeight);
+
+    if (_videoInfo != null) {
+      proportionalScaleToStage(_video, _videoInfo.width, _videoInfo.height);
+    }
+    if (_imageLoader != null) {
+      proportionalScaleToStage(_imageLoader, _imageLoader.width, _imageLoader.height);
+    }
+
+    _overlay.resize(stage.stageWidth, stage.stageHeight);
+    _overlay.x = 0;
+    _overlay.y = 0;
+
+    _control.resize(stage.stageWidth, 28);
+    _control.x = 0;
+    _control.y = stage.stageHeight-_control.height;
+
+    _debugdisp.resize(stage.stageWidth, stage.stageHeight-_control.height);
+    _debugdisp.x = 0;
+    _debugdisp.y = 0;
+  }
+
+  private function update():void
+  {
+    _overlay.update();
+    _control.update();
+    if (_stream != null) {
+      if (_state == STARTED) {
+	_control.seekBar.time = _stream.time;
+      }
+      if (_debugdisp.visible) {
+	_debugdisp.update(_stream);
+      }
+    }
+  }
+
+  public function connect():void
+  {
+    if (_params.url != null && !_connection.connected) {
+      var rtmpURL:String = getRtmpURL(_params.url, _basehref);
+      log("Connecting:", rtmpURL);
+      _control.statusDisplay.text = "Connecting...";
+      _connection.connect(rtmpURL);
+    }
+  }
+
   public function setPlayState(playing:Boolean):void
   {
     log("setPlayState:", playing);
@@ -493,73 +547,19 @@ public class Main extends Sprite
     }
   }
 
-  public function connect():void
+  public function seek(t:Number):void
   {
-    if (_params.url != null && !_connection.connected) {
-      var rtmpURL:String = getRtmpURL(_params.url, _basehref);
-      log("Connecting:", rtmpURL);
-      _control.statusDisplay.text = "Connecting...";
-      _connection.connect(rtmpURL);
-    }
-  }
-
-  private function startPlaying(start:Number=-1):void
-  {
-    if (_params.url != null && _stream != null) {
-      var streamPath:String = getStreamPath(_params.url);
-      updateStatus(STARTING);
-      if (start < 0) {
-	start = _control.seekBar.time;
-      }
-      log("Starting:", streamPath, start);
-      _stream.play(streamPath, start);
-    }
-  }
-
-  private function stopPlaying():void
-  {
-    if (_params.url != null && _stream != null) {
-      log("Stopping");
-      updateStatus(STOPPING);
-      _stream.close();
-    }
-  }
-
-  public function resize():void
-  {
-    log("resize:", stage.stageWidth+","+stage.stageHeight);
-
-    if (_videoInfo != null) {
-      proportionalScaleToStage(_video, _videoInfo.width, _videoInfo.height);
-    }
-    if (_imageLoader != null) {
-      proportionalScaleToStage(_imageLoader, _imageLoader.width, _imageLoader.height);
-    }
-
-    _overlay.resize(stage.stageWidth, stage.stageHeight);
-    _overlay.x = 0;
-    _overlay.y = 0;
-
-    _control.resize(stage.stageWidth, 28);
-    _control.x = 0;
-    _control.y = stage.stageHeight-_control.height;
-
-    _debugdisp.resize(stage.stageWidth, stage.stageHeight-_control.height);
-    _debugdisp.x = 0;
-    _debugdisp.y = 0;
-  }
-
-  public function update():void
-  {
-    _overlay.update();
-    _control.update();
+    log("seek:", t);
     if (_stream != null) {
-      if (_state == STARTED) {
-	_control.seekBar.time = _stream.time;
-      }
-      if (_debugdisp.visible) {
-	_debugdisp.update(_stream);
-      }
+      _stream.seek(t);
+    }
+  }
+
+  public function seekDelta(dt:Number):void
+  {
+    log("seekDelta:", dt);
+    if (_stream != null) {
+      _stream.seek(_stream.time + dt);
     }
   }
 
