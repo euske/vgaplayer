@@ -156,18 +156,24 @@ public class Main extends Sprite
 
   private function getBaseURL(url:String, proto:String="rtmp"):String
   {
-    if (url != null && url.substr(0, 1) == "/") {
-      // if url starts with "/", it means a relative url.
+    if (url != null && url.indexOf("://") < 0) {
+      // Resolve a relative url.
       var info:LoaderInfo = LoaderInfo(this.root.loaderInfo);
       var basehref:String = info.loaderURL;
-      var i:int = basehref.indexOf("://");
-      if (0 < i) {
-	basehref = basehref.substring(i+3);
-	i = basehref.indexOf("/");
-	if (i < 0) {
-	  i = basehref.length;
+      var i:int;
+      if (url.substr(0, 1) == "/") {
+	i = basehref.indexOf("://");
+	if (0 < i) {
+	  basehref = basehref.substring(i+3);
+	  i = basehref.indexOf("/");
+	  if (i < 0) {
+	    i = basehref.length;
+	  }
+	  url = proto+"://"+basehref.substr(0, i)+url;
 	}
-	url = proto+"://"+basehref.substr(0, i)+url;
+      } else {
+	i = basehref.lastIndexOf("/");
+	url = basehref.substr(0, i+1)+url;
       }
     }
     return url;
