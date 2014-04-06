@@ -1,5 +1,4 @@
 //  VGAPlayer
-//  TODO: arrow key navigation
 //
 
 package {
@@ -121,6 +120,8 @@ public class Main extends Sprite
     log("bufferTime:", _params.bufferTime);
     log("bufferTimeMax:", _params.bufferTimeMax);
     log("maxPauseBufferTime:", _params.maxPauseBufferTime);
+    log("backBufferTime:", _params.backBufferTime);
+    log("inBufferSeek:", _params.inBufferSeek);
 
     _connection = new NetConnection();
     _connection.addEventListener(NetStatusEvent.NET_STATUS, onNetStatusEvent);
@@ -211,10 +212,40 @@ public class Main extends Sprite
     switch (e.keyCode) {
     case Keyboard.ESCAPE:	// Esc
     case 68:			// D
+      // Toggle the debug window.
       _debugdisp.visible = !_debugdisp.visible;
       break;
     case Keyboard.SPACE:
+      // Toggle play/stop.
       setPlayState(_control.playButton.toPlay);
+      break;
+    case Keyboard.LEFT:
+      // Rewind for 10 sec.
+      seekDelta(-10);
+      break;
+    case Keyboard.RIGHT:
+      // Fast-forward for 10 sec.
+      seekDelta(+10);
+      break;
+    case Keyboard.UP:
+      // Rewind for 1 min.
+      seekDelta(-60);
+      break;
+    case Keyboard.DOWN:
+      // Fast-forward for 1 min.
+      seekDelta(+60);
+      break;
+    case Keyboard.PAGE_UP:
+      // Rewind for 10 min.
+      seekDelta(-600);
+      break;
+    case Keyboard.PAGE_DOWN:
+      // Fast-forward for 10 min.
+      seekDelta(+600);
+      break;
+    case Keyboard.HOME:
+      // Rewind to the beginning.
+      seek(0);
       break;
     }
   }
@@ -238,9 +269,11 @@ public class Main extends Sprite
       _stream.client.onMetaData = onMetaData;
       _stream.client.onCuePoint = onCuePoint;
       _stream.client.onPlayStatus = onPlayStatus;
+      _stream.inBufferSeek = _params.inBufferSeek;
       _stream.bufferTime = _params.bufferTime;
       _stream.bufferTimeMax = _params.bufferTimeMax;
       _stream.maxPauseBufferTime = _params.maxPauseBufferTime;
+      _stream.backBufferTime = _params.backBufferTime;
       _video.attachNetStream(_stream);
       updateVolume(_control.volumeSlider);
       startPlaying(_params.start);
@@ -345,7 +378,7 @@ public class Main extends Sprite
   private function onSeekBarChanged(e:Event):void
   {
     var seekbar:SeekBar = SeekBar(e.target);
-    updatePlayTime(seekbar.time);
+    seek(seekbar.time);
   }
 
   private function onFullscreenClick(e:Event):void
@@ -375,10 +408,19 @@ public class Main extends Sprite
     }
   }
 
-  private function updatePlayTime(t:Number):void
+  private function seek(t:Number):void
   {
+    log("seek:", t);
     if (_stream != null) {
       _stream.seek(t);
+    }
+  }
+
+  private function seekDelta(dt:Number):void
+  {
+    log("seekDelta:", dt);
+    if (_stream != null) {
+      _stream.seek(_stream.time + dt);
     }
   }
 
@@ -547,8 +589,10 @@ class Params
   public var debug:Boolean = false;
   public var url:String = null;
   public var bufferTime:Number = 1.0;
-  public var bufferTimeMax:Number = 1.0;
+  public var bufferTimeMax:Number = 0.0;
   public var maxPauseBufferTime:Number = 30.0;
+  public var backBufferTime:Number = 30.0;
+  public var inBufferSeek:Boolean = false;
   public var fullscreen:Boolean = false;
   public var smoothing:Boolean = false;
   public var start:Number = 0.0;
@@ -566,7 +610,7 @@ class Params
     if (obj != null) {
       // debug
       if (obj.debug) {
-	debug = (parseInt(obj.debug) != 0);
+	debug = parseBoolean(obj.debug);
       }
       // url
       if (obj.url) {
@@ -586,13 +630,21 @@ class Params
       if (obj.maxPauseBufferTime) {
 	maxPauseBufferTime = parseFloat(obj.maxPauseBufferTime);
       }
+      // backBufferTime
+      if (obj.backBufferTime) {
+	backBufferTime = parseFloat(obj.backBufferTime);
+      }
+      // inBufferSeek
+      if (obj.inBufferSeek) {
+	inBufferSeek = parseBoolean(obj.inBufferSeek);
+      }
       // fullscreen
       if (obj.fullscreen) {
-	fullscreen = (parseInt(obj.fullscreen) != 0);
+	fullscreen = parseBoolean(obj.fullscreen);
       }
       // smoothing
       if (obj.smoothing) {
-	smoothing = (parseInt(obj.smoothing) != 0);
+	smoothing = parseBoolean(obj.smoothing);
       }
       // start
       if (obj.start) {
@@ -628,6 +680,11 @@ class Params
 	imageUrl = obj.imageUrl;
       }
     }
+  }
+
+  private function parseBoolean(v:String):Boolean
+  {
+    return (parseInt(v) != 0);
   }
 
   private function parseColor(v:String):uint
