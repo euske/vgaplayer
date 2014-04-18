@@ -329,6 +329,7 @@ public class Main extends Sprite
       // Show the seek bar when the video duration is defined.
       _control.statusDisplay.visible = false;
       _control.seekBar.duration = _videoMetaData.duration;
+      _control.seekBar.bytesTotal = _stream.bytesTotal;
       _control.seekBar.visible = true;
     }
     updateStatus(_state);
@@ -508,6 +509,7 @@ public class Main extends Sprite
     if (_stream != null) {
       if (_state == STARTED) {
 	_control.seekBar.time = _stream.time;
+	_control.seekBar.bytesLoaded = _stream.bytesLoaded;
       }
       if (_debugdisp.visible) {
 	_debugdisp.update(_stream);
@@ -1084,6 +1086,8 @@ class SeekBar extends Slider
 
   private var _text:TextField;
   private var _duration:Number = 0;
+  private var _bytesTotal:uint = 0;
+  private var _bytesLoaded:uint = 0;
   private var _locked:Boolean = false;
   private var _time:Number = 0;
   private var _goal:Number = 0;
@@ -1160,6 +1164,18 @@ class SeekBar extends Slider
   {
     var v:Number = (_locked)? _goal : _time;
     return (v * duration);
+  }
+
+  public function set bytesTotal(v:uint):void
+  {
+    _bytesTotal = v;
+    invalidate();
+  }
+
+  public function set bytesLoaded(v:uint):void
+  {
+    _bytesLoaded = v;
+    invalidate();
   }
 
   public function unlock():void
@@ -1429,7 +1445,7 @@ class DebugDisplay extends Sprite
     _playstat.multiline = true;
     _playstat.textColor = 0xffffff;
     _playstat.type = TextFieldType.DYNAMIC;
-    _playstat.text = "\n\n\n\n\n";
+    _playstat.text = "\n\n\n\n\n\n\n\n";
     _playstat.width = 200;
     _playstat.height = _playstat.textHeight+1;
     addChild(_playstat);
@@ -1438,7 +1454,7 @@ class DebugDisplay extends Sprite
     _streaminfo.multiline = true;
     _streaminfo.textColor = 0xffff00;
     _streaminfo.type = TextFieldType.DYNAMIC;
-    _streaminfo.text = "\n\n\n\n\n\n\n\n\n\n";
+    _streaminfo.text = "\n\n\n\n\n\n\n\n\n\n\n";
     _streaminfo.width = 200;
     _streaminfo.height = _streaminfo.textHeight+1;
     addChild(_streaminfo);
@@ -1466,6 +1482,8 @@ class DebugDisplay extends Sprite
     text = ("time: "+stream.time+"\n"+
 	    "bufferLength: "+stream.bufferLength+"\n"+
 	    "backBufferLength: "+stream.backBufferLength+"\n"+
+	    "bytesLoaded: "+stream.bytesLoaded+"\n"+
+	    "bytesTotal: "+stream.bytesTotal+"\n"+
 	    "currentFPS: "+Math.floor(stream.currentFPS)+"\n"+
 	    "liveDelay: "+stream.liveDelay+"\n");
     _playstat.text = text;
