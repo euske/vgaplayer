@@ -1,7 +1,7 @@
 VGA Player
 ==========
 
-VGAPlayer is an open source player for Adobe Flash Media Server streaming (RTMP stream).
+VGAPlayer is an open source player for FLV videos (static or RTMP stream).
 
 Demo: http://euske.github.io/vgaplayer/demo.html
 

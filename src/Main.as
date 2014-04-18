@@ -42,7 +42,7 @@ public class Main extends Sprite
 
   private var _connection:NetConnection;
   private var _stream:NetStream;
-  private var _videoInfo:Object;
+  private var _videoMetaData:Object;
   private var _state:String;
 
   // Main()
@@ -324,11 +324,11 @@ public class Main extends Sprite
   private function onMetaData(info:Object):void
   {
     log("onMetaData:", expandAttrs(info));
-    _videoInfo = info;
-    if (0 < _videoInfo.duration) {
+    _videoMetaData = info;
+    if (0 < _videoMetaData.duration) {
       // Show the seek bar when the video duration is defined.
       _control.statusDisplay.visible = false;
-      _control.seekBar.duration = _videoInfo.duration;
+      _control.seekBar.duration = _videoMetaData.duration;
       _control.seekBar.visible = true;
     }
     updateStatus(_state);
@@ -481,8 +481,8 @@ public class Main extends Sprite
   {
     log("resize:", stage.stageWidth+","+stage.stageHeight);
 
-    if (_videoInfo != null) {
-      proportionalScaleToStage(_video, _videoInfo.width, _videoInfo.height);
+    if (_videoMetaData != null) {
+      proportionalScaleToStage(_video, _videoMetaData.width, _videoMetaData.height);
     }
     if (_imageLoader != null) {
       proportionalScaleToStage(_imageLoader, _imageLoader.width, _imageLoader.height);
