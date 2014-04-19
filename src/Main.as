@@ -329,7 +329,7 @@ public class Main extends Sprite
       // Show the seek bar when the video duration is defined.
       _control.statusDisplay.visible = false;
       _control.seekBar.duration = _videoMetaData.duration;
-      _control.seekBar.bytesTotal = _stream.bytesTotal;
+      _control.seekBar.bytesTotal = _videoMetaData.filesize;
       _control.seekBar.visible = true;
     }
     updateStatus(_state);
@@ -509,6 +509,8 @@ public class Main extends Sprite
     if (_stream != null) {
       if (_state == STARTED) {
 	_control.seekBar.time = _stream.time;
+      }
+      if (0 < _stream.bytesTotal) {
 	_control.seekBar.bytesLoaded = _stream.bytesLoaded;
       }
       if (_debugdisp.visible) {
@@ -1131,8 +1133,9 @@ class SeekBar extends Slider
   {
     var w:int = (width-margin-leftMargin);
     var v:Number = (x-leftMargin)/w;
+    v = Math.min(v, availableRatio);
     _locked = true;
-    _goal = Math.max(0, Math.min(1, v));
+    _goal = Math.max(0, Math.min(1, v)) * _duration;
     invalidate();
   }
 
@@ -1152,20 +1155,6 @@ class SeekBar extends Slider
     invalidate();
   }
 
-  public function set time(v:Number):void
-  {
-    if (0 < duration) {
-      _time = v / duration;
-      invalidate();
-    }
-  }
-
-  public function get time():Number
-  {
-    var v:Number = (_locked)? _goal : _time;
-    return (v * duration);
-  }
-
   public function set bytesTotal(v:uint):void
   {
     _bytesTotal = v;
@@ -1176,6 +1165,26 @@ class SeekBar extends Slider
   {
     _bytesLoaded = v;
     invalidate();
+  }
+
+  public function get availableRatio():Number
+  {
+    if (_bytesTotal == 0) {
+      return 1.0;
+    } else {
+      return _bytesLoaded / Number(_bytesTotal);
+    }
+  }
+
+  public function set time(v:Number):void
+  {
+    _time = v;
+    invalidate();
+  }
+
+  public function get time():Number
+  {
+    return (_locked)? _goal : _time;
   }
 
   public function unlock():void
@@ -1189,9 +1198,8 @@ class SeekBar extends Slider
     super.repaint();
     var size:int = barSize;
     var color:uint = (highlit)? hiColor : fgColor;
-    var value:Number = (_locked)? _goal : _time;
+    var t:Number = (_locked)? _goal : _time;
 
-    var t:int = value * duration;
     _text.text = (Math.floor(t/3600)+":"+
 		  format2(Math.floor(t/60)%60, "0")+":"+
 		  format2(t%60, "0")+" ");
@@ -1200,8 +1208,10 @@ class SeekBar extends Slider
     var w:int = (width-margin-leftMargin);
     var h:int = (height-margin*2);
     graphics.beginFill(color, (color>>>24)/255);
-    graphics.drawRect(leftMargin, (height-size)/2, w, size);
-    graphics.drawRect(leftMargin+value*w-size, margin, size*2, h);
+    graphics.drawRect(leftMargin, (height-size)/2, w*availableRatio, size);
+    if (0 < _duration) {
+      graphics.drawRect(leftMargin+w*t/_duration-size, margin, size*2, h);
+    }
     graphics.endFill();
   }
 
