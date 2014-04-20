@@ -24,6 +24,7 @@ FlashVars Parameters:
   * fullscreen: Indicates if the fullscreen button is shown. (1: on, 0: off)
   * smoothing: Indicates if the video smoothing is turned on. (1: on, 0: off)
   * start: Start position of the stream. (default: 0)
+  * autoplay: Start playing automatically. (1: on, 0: off)
   * bufferTime: Stream buffering time. (default: 1.0 sec)
   * bufferTimeMax: Maximum stream buffering time. (default: 1.0 sec)
   * bgColor: Background color. (default: "#000000")

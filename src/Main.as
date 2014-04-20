@@ -127,7 +127,11 @@ public class Main extends Sprite
     _connection = new NetConnection();
     _connection.addEventListener(NetStatusEvent.NET_STATUS, onNetStatusEvent);
     _connection.addEventListener(AsyncErrorEvent.ASYNC_ERROR, onAsyncErrorEvent);
-    connect();
+
+    updateStatus(STOPPED);
+    if (_params.autoplay) {
+      connect();
+    }
   }
 
   private function log(... args):void
@@ -459,7 +463,7 @@ public class Main extends Sprite
     _control.statusDisplay.text = text;
   }
 
-  private function startPlaying(start:Number=-1):void
+  private function startPlaying(start:Number):void
   {
     if (_url != null && _stream != null) {
       var streamPath:String = _url;
@@ -467,9 +471,6 @@ public class Main extends Sprite
 	streamPath = _url.substr(_url.lastIndexOf("/")+1);
       }
       updateStatus(STARTING);
-      if (start < 0) {
-	start = _control.seekBar.time;
-      }
       log("Starting:", streamPath, start);
       _stream.play(streamPath, start);
     }
@@ -556,7 +557,7 @@ public class Main extends Sprite
     case STOPPED:
       if (playing) {
 	if (_connection.connected) {
-	  startPlaying();
+	  startPlaying(_control.seekBar.time);
 	} else {
 	  connect();
 	}
@@ -614,6 +615,7 @@ class Params
   public var fullscreen:Boolean = false;
   public var smoothing:Boolean = false;
   public var start:Number = 0.0;
+  public var autoplay:Boolean = true;
 
   public var bgColor:uint = 0x000000;
   public var buttonBgColor:uint = 0x448888ff;
@@ -667,6 +669,10 @@ class Params
       // start
       if (obj.start) {
 	start = parseFloat(obj.start);
+      }
+      // autoplay
+      if (obj.autoplay) {
+	autoplay = parseBoolean(obj.autoplay);
       }
 
       // bgColor
