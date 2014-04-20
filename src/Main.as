@@ -91,6 +91,7 @@ public class Main extends Sprite
     _control.seekBar.fgColor = _params.buttonFgColor;
     _control.seekBar.hiColor = _params.buttonHiColor;
     _control.seekBar.addEventListener(Slider.CHANGED, onSeekBarChanged);
+    _control.seekBar.isStatic = !isRTMP;
     if (_control.fsButton != null) {
       _control.fsButton.bgColor = _params.buttonBgColor;
       _control.fsButton.fgColor = _params.buttonFgColor;
@@ -177,6 +178,11 @@ public class Main extends Sprite
       }
     }
     return url;
+  }
+
+  private function get isRTMP():Boolean
+  {
+    return (_url != null && _url.substr(0, 5) == "rtmp:");
   }
 
   private function onResize(e:Event):void
@@ -457,7 +463,7 @@ public class Main extends Sprite
   {
     if (_url != null && _stream != null) {
       var streamPath:String = _url;
-      if (_url.substr(0, 5) == "rtmp:") {
+      if (isRTMP) {
 	streamPath = _url.substr(_url.lastIndexOf("/")+1);
       }
       updateStatus(STARTING);
@@ -523,7 +529,7 @@ public class Main extends Sprite
   {
     if (_url != null && !_connection.connected) {
       var url:String = null;
-      if (_url.substr(0, 5) == "rtmp:") {
+      if (isRTMP) {
 	var i:int = _url.lastIndexOf("/");
 	url = _url.substr(0, i);
       }
@@ -1090,6 +1096,7 @@ class SeekBar extends Slider
   private var _duration:Number = 0;
   private var _bytesTotal:uint = 0;
   private var _bytesLoaded:uint = 0;
+  private var _static:Boolean = false;
   private var _locked:Boolean = false;
   private var _time:Number = 0;
   private var _goal:Number = 0;
@@ -1155,6 +1162,12 @@ class SeekBar extends Slider
     invalidate();
   }
 
+  public function set isStatic(v:Boolean):void
+  {
+    _static = v;
+    invalidate();
+  }
+
   public function set bytesTotal(v:uint):void
   {
     _bytesTotal = v;
@@ -1169,10 +1182,10 @@ class SeekBar extends Slider
 
   public function get availableRatio():Number
   {
-    if (_bytesTotal == 0) {
-      return 1.0;
-    } else {
+    if (_static && 0 < _bytesTotal) {
       return _bytesLoaded / Number(_bytesTotal);
+    } else {
+      return 1.0;
     }
   }
 
