@@ -301,8 +301,6 @@ public class Main extends Sprite
       break;
 
     case "NetStream.Play.Start":
-      _overlay.toPlay = false;
-      _control.playButton.toPlay = false;
       updateStatus(STARTING);
       break;
 
@@ -425,7 +423,8 @@ public class Main extends Sprite
     _state = state;
     switch (_state) {
     case STARTING:
-      _overlay.toPlay = false;
+      _overlay.toPlay = true;
+      _overlay.autohide = true;
       _control.playButton.toPlay = false;
       if (text == null) {
 	text = "Starting...";
@@ -435,6 +434,7 @@ public class Main extends Sprite
     case STARTED:
       _control.seekBar.unlock();
       _overlay.toPlay = false;
+      _overlay.autohide = true;
       _control.playButton.toPlay = false;
       _control.autohide = true;
       if (text == null) {
@@ -444,6 +444,7 @@ public class Main extends Sprite
 
     case STOPPING:
       _overlay.toPlay = false;
+      _overlay.autohide = true;
       _control.playButton.toPlay = false;
       if (text == null) {
 	text = "Stopping...";
@@ -452,6 +453,7 @@ public class Main extends Sprite
 
     case STOPPED:
       _overlay.toPlay = true;
+      _overlay.autohide = false;
       _control.playButton.toPlay = true;
       _control.autohide = false;
       if (text == null) {
@@ -1382,6 +1384,7 @@ class OverlayButton extends Sprite
   private var _width:int;
   private var _height:int;
   private var _toPlay:Boolean;
+  private var _autohide:Boolean;
   private var _timeout:int;
 
   public function OverlayButton()
@@ -1398,6 +1401,17 @@ class OverlayButton extends Sprite
   public function set toPlay(value:Boolean):void
   {
     _toPlay = value;
+    repaint();
+  }
+
+  public function get autohide():Boolean
+  {
+    return _autohide;
+  }
+
+  public function set autohide(value:Boolean):void
+  {
+    _autohide = value;
   }
 
   public function resize(w:int, h:int):void
@@ -1443,8 +1457,12 @@ class OverlayButton extends Sprite
   
   public function update():void
   {
-    var a:Number = (_timeout - getTimer())/fadeDuration + 1.0;
-    alpha = Math.min(Math.max(a, 0.0), 1.0);
+    if (_autohide) {
+      var a:Number = (_timeout - getTimer())/fadeDuration + 1.0;
+      alpha = Math.min(Math.max(a, 0.0), 1.0);
+    } else {
+      alpha = 1.0;
+    }
   }
 }
 
