@@ -106,6 +106,23 @@ public class Main extends Sprite
     _debugdisp.visible = _params.debug;
     addChild(_debugdisp);
 
+    if (false) {
+      // menu testing.
+      var menu:PopupMenuButtonOfDoom = new PopupMenuButtonOfDoom();
+      menu.bgColor = _params.buttonBgColor;
+      menu.fgColor = _params.buttonFgColor;
+      menu.hiColor = _params.buttonHiColor;
+      menu.borderColor = _params.buttonBorderColor;
+      menu.x = menu.y = 100;
+      menu.resize(100, 100);
+      menu.addTextItem("Snarf.");
+      menu.addTextItem("Goggy?");
+      menu.addTextItem("IHKH!");
+      addChild(menu);
+      menu.addEventListener(Event.ENTER_FRAME, function (e:Event):void { menu.update(); });
+      menu.addEventListener(MenuItemEvent.CHOOSE, function (e:MenuItemEvent):void { trace(e.item); });
+    }
+
     stage.addEventListener(Event.RESIZE, onResize);
     stage.addEventListener(Event.ENTER_FRAME, onEnterFrame);
     stage.addEventListener(FullScreenEvent.FULL_SCREEN, onFullScreen);
@@ -601,6 +618,7 @@ import flash.net.NetStream;
 import flash.net.NetStreamInfo;
 import flash.ui.Keyboard;
 import flash.utils.getTimer;
+import flash.geom.Point;
 
 //  Params
 //  Object to hold the parameters given by FlashVars.
@@ -902,6 +920,178 @@ class Slider extends Button
 
   protected virtual function onMouseDrag(e:MouseEvent):void
   {
+  }
+}
+
+
+//  MenuItem
+// 
+class MenuItem extends Control
+{
+  public static const CHOSEN:String = "MenuItem.CHOSEN";
+
+  public var value:Object;
+
+  protected override function onMouseUpLocal(e:MouseEvent):void 
+  {
+    super.onMouseUpLocal(e);
+    dispatchEvent(new Event(CHOSEN));
+  }
+}
+
+
+//  MenuItemEvent
+//
+class MenuItemEvent extends Event
+{
+  public static const CHOOSE:String = "MenuItemEvent.CHOOSE";
+
+  public var item:MenuItem;
+
+  public function MenuItemEvent(item:MenuItem=null)
+  {
+    super(CHOOSE);
+    this.item = item;
+  }
+}
+
+
+//  TextMenuItem
+// 
+class TextMenuItem extends MenuItem
+{
+  private var _text:TextField;
+
+  public function TextMenuItem()
+  {
+    super();
+    _text = new TextField();
+    _text.selectable = false;
+    _text.autoSize = TextFieldAutoSize.LEFT;
+    addChild(_text);
+  }
+
+  public function get label():String
+  {
+    return _text.text;
+  }
+
+  public function set label(v:String):void
+  {
+    _text.text = v;
+    invalidate();
+  }
+
+  public override function repaint():void
+  {
+    super.repaint();
+
+    if (highlit) {
+      _text.textColor = hiColor;
+    } else {
+      _text.textColor = fgColor;
+    }
+  }
+}
+
+
+//  MenuPopup
+//
+class MenuPopup extends Button
+{
+  private var _items:Array;
+
+  public function MenuPopup()
+  {
+    super();
+    _items = new Array();
+  }
+
+  public function addTextItem(label:String, value:Object=null):void
+  {
+    var item:TextMenuItem = new TextMenuItem();
+    item.label = label;
+    item.value = (value != null)? value : label;
+    addItem(item);
+  }
+
+  public function addItem(item:MenuItem):void
+  {
+    _items.push(item);
+    item.x = 0;
+    item.y = height;
+    item.addEventListener(MenuItem.CHOSEN, onItemChosen);
+    addChild(item);
+    resize(width, height);
+  }
+
+  protected virtual function onItemChosen(e:Event):void 
+  {
+    var item:MenuItem = MenuItem(e.target);
+    dispatchEvent(new MenuItemEvent(item));
+  }
+
+  public override function update():void
+  {
+    super.update();
+    for each (var item:MenuItem in _items) {
+      item.update();
+    }
+  }
+}
+
+
+//  PopupMenuButtonOfDoom
+//
+class PopupMenuButtonOfDoom extends Button
+{
+  private var _popup:MenuPopup;
+
+  public function PopupMenuButtonOfDoom()
+  {
+    super();
+    _popup = new MenuPopup();
+    _popup.addEventListener(MenuItemEvent.CHOOSE, onItemChosen);
+  }
+
+  public function addTextItem(label:String, value:Object=null):void
+  {
+    _popup.addTextItem(label, value);
+  }
+
+  public function addItem(item:MenuItem):void
+  {
+    _popup.addItem(item);
+  }
+  
+  protected virtual function onItemChosen(e:MenuItemEvent):void 
+  {
+    dispatchEvent(e);
+  }
+
+  protected override function onMouseDownLocal(e:MouseEvent):void 
+  {
+    super.onMouseDownLocal(e);
+    var p:Point = parent.globalToLocal(new Point(e.stageX, e.stageY));
+    _popup.x = p.x;
+    _popup.y = p.y;
+    _popup.bgColor = bgColor;
+    _popup.fgColor = fgColor;
+    _popup.hiColor = hiColor;
+    _popup.borderColor = borderColor;
+    parent.addChild(_popup);
+  }
+
+  protected override function onMouseUpLocal(e:MouseEvent):void 
+  {
+    parent.removeChild(_popup);
+    super.onMouseUpLocal(e);
+  }
+
+  public override function update():void
+  {
+    super.update();
+    _popup.update();
   }
 }
 
