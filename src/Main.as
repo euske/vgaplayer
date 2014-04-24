@@ -605,7 +605,7 @@ import flash.utils.getTimer;
 //  Params
 //  Object to hold the parameters given by FlashVars.
 //
-class Params
+class Params extends Object
 {
   public var debug:Boolean = false;
   public var url:String = null;
@@ -629,6 +629,7 @@ class Params
 
   public function Params(obj:Object)
   {
+    super();
     if (obj != null) {
       // debug
       if (obj.debug) {
@@ -742,6 +743,7 @@ class Control extends Sprite
 
   public function Control()
   {
+    super();
     addEventListener(Event.ADDED_TO_STAGE, onAdded);
     addEventListener(MouseEvent.MOUSE_OVER, onMouseOver);
     addEventListener(MouseEvent.MOUSE_OUT, onMouseOut);
@@ -923,6 +925,7 @@ class ControlBar extends Sprite
 
   public function ControlBar(fullscreen:Boolean=false)
   {
+    super();
     _timeout = -fadeDuration;
 
     playButton = new PlayPauseButton();
@@ -1333,6 +1336,7 @@ class StatusDisplay extends Control
 
   public function StatusDisplay()
   {
+    super();
     _text = new TextField();
     _text.selectable = false;
     addChild(_text);
@@ -1383,12 +1387,14 @@ class OverlayButton extends Sprite
   private var _size:int;
   private var _width:int;
   private var _height:int;
+  private var _invalidated:Boolean;
   private var _toPlay:Boolean;
   private var _autohide:Boolean;
   private var _timeout:int;
 
   public function OverlayButton()
   {
+    super();
     _timeout = -fadeDuration;
     alpha = 0;
   }
@@ -1401,7 +1407,7 @@ class OverlayButton extends Sprite
   public function set toPlay(value:Boolean):void
   {
     _toPlay = value;
-    repaint();
+    _invalidated = true;
   }
 
   public function get autohide():Boolean
@@ -1418,13 +1424,13 @@ class OverlayButton extends Sprite
   {
     _width = w;
     _height = h;
-    repaint();
+    _invalidated = true;
   }
   
   public function show():void
   {
     _timeout = getTimer();
-    repaint();
+    _invalidated = true;
   }
 
   public function repaint():void
@@ -1457,6 +1463,11 @@ class OverlayButton extends Sprite
   
   public function update():void
   {
+    if (_invalidated) {
+      _invalidated = false;
+      repaint();
+    }
+
     if (_autohide) {
       var a:Number = (_timeout - getTimer())/fadeDuration + 1.0;
       alpha = Math.min(Math.max(a, 0.0), 1.0);
@@ -1478,6 +1489,7 @@ class DebugDisplay extends Sprite
 
   public function DebugDisplay()
   {
+    super();
     _logger = new TextField();
     _logger.multiline = true;
     _logger.wordWrap = true;
