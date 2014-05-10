@@ -240,8 +240,10 @@ public class Main extends Sprite
     switch (e.keyCode) {
     case Keyboard.ESCAPE:	// Esc
     case 68:			// D
-      // Toggle the debug window.
-      _debugdisp.visible = !_debugdisp.visible;
+      // Toggle the debug window if debug = 1.
+      if (_params.debug) {
+	_debugdisp.visible = !_debugdisp.visible;
+      }
       break;
     case Keyboard.SPACE:
       // Toggle play/stop.
