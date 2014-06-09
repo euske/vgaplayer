@@ -79,6 +79,8 @@
     <hidden path="obj" />
     <hidden path="live" />
     <hidden path="tmp" />
+    <hidden path="build.bat" />
+    <hidden path="build.sh" />
   </hiddenPaths>
   <!-- Executed before build -->
   <preBuildCommand />

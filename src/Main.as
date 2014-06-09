@@ -931,13 +931,20 @@ class Slider extends Button
 class MenuItem extends Control
 {
   public static const CHOSEN:String = "MenuItem.CHOSEN";
+  public static const UNCHOSEN:String = "MenuItem.UNCHOSEN";
 
   public var value:Object;
 
-  protected override function onMouseUpLocal(e:MouseEvent):void 
+  protected override function onMouseOver(e:MouseEvent):void 
   {
-    super.onMouseUpLocal(e);
+    super.onMouseOver(e);
     dispatchEvent(new Event(CHOSEN));
+  }
+
+  protected override function onMouseOut(e:MouseEvent):void 
+  {
+    super.onMouseOut(e);
+    dispatchEvent(new Event(UNCHOSEN));
   }
 }
 
@@ -1002,6 +1009,7 @@ class TextMenuItem extends MenuItem
 class MenuPopup extends Button
 {
   private var _items:Array;
+  private var _chosen:MenuItem;
 
   public function MenuPopup()
   {
@@ -1023,14 +1031,27 @@ class MenuPopup extends Button
     item.x = 0;
     item.y = height;
     item.addEventListener(MenuItem.CHOSEN, onItemChosen);
+    item.addEventListener(MenuItem.UNCHOSEN, onItemUnchosen);
     addChild(item);
     resize(width, height);
   }
 
-  protected virtual function onItemChosen(e:Event):void 
+  protected override function onMouseUp(e:MouseEvent):void 
   {
-    var item:MenuItem = MenuItem(e.target);
-    dispatchEvent(new MenuItemEvent(item));
+    super.onMouseUp(e);
+    if (visible) {
+      dispatchEvent(new MenuItemEvent(_chosen));
+      _chosen = null;
+    }
+  }
+
+  private function onItemChosen(e:Event):void
+  {
+    _chosen = MenuItem(e.target);
+  }
+  private function onItemUnchosen(e:Event):void
+  {
+    _chosen = null;
   }
 
   public override function update():void
@@ -1053,6 +1074,10 @@ class PopupMenuButtonOfDoom extends Button
   {
     super();
     _popup = new MenuPopup();
+    _popup.bgColor = bgColor;
+    _popup.fgColor = fgColor;
+    _popup.hiColor = hiColor;
+    _popup.borderColor = borderColor;
     _popup.addEventListener(MenuItemEvent.CHOOSE, onItemChosen);
   }
 
@@ -1068,7 +1093,7 @@ class PopupMenuButtonOfDoom extends Button
   
   protected virtual function onItemChosen(e:MenuItemEvent):void 
   {
-    dispatchEvent(e);
+    dispatchEvent(new MenuItemEvent(e.item));
   }
 
   protected override function onMouseDownLocal(e:MouseEvent):void 
@@ -1077,10 +1102,6 @@ class PopupMenuButtonOfDoom extends Button
     var p:Point = parent.globalToLocal(new Point(e.stageX, e.stageY));
     _popup.x = p.x;
     _popup.y = p.y;
-    _popup.bgColor = bgColor;
-    _popup.fgColor = fgColor;
-    _popup.hiColor = hiColor;
-    _popup.borderColor = borderColor;
     parent.addChild(_popup);
   }
 
