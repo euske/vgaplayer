@@ -926,29 +926,6 @@ class Slider extends Button
 }
 
 
-//  MenuItem
-// 
-class MenuItem extends Control
-{
-  public static const CHOSEN:String = "MenuItem.CHOSEN";
-  public static const UNCHOSEN:String = "MenuItem.UNCHOSEN";
-
-  public var value:Object;
-
-  protected override function onMouseOver(e:MouseEvent):void 
-  {
-    super.onMouseOver(e);
-    dispatchEvent(new Event(CHOSEN));
-  }
-
-  protected override function onMouseOut(e:MouseEvent):void 
-  {
-    super.onMouseOut(e);
-    dispatchEvent(new Event(UNCHOSEN));
-  }
-}
-
-
 //  MenuItemEvent
 //
 class MenuItemEvent extends Event
@@ -961,6 +938,26 @@ class MenuItemEvent extends Event
   {
     super(CHOOSE);
     this.item = item;
+  }
+}
+
+
+//  MenuItem
+// 
+class MenuItem extends Control
+{
+  public var value:Object;
+
+  protected override function onMouseOver(e:MouseEvent):void 
+  {
+    super.onMouseOver(e);
+    dispatchEvent(new MenuItemEvent(this));
+  }
+
+  protected override function onMouseOut(e:MouseEvent):void 
+  {
+    super.onMouseOut(e);
+    dispatchEvent(new MenuItemEvent(null));
   }
 }
 
@@ -1017,6 +1014,11 @@ class MenuPopup extends Button
     _items = new Array();
   }
 
+  public function get chosen():MenuItem
+  {
+    return _chosen;
+  }
+
   public function addTextItem(label:String, value:Object=null):void
   {
     var item:TextMenuItem = new TextMenuItem();
@@ -1030,8 +1032,7 @@ class MenuPopup extends Button
     _items.push(item);
     item.x = 0;
     item.y = height;
-    item.addEventListener(MenuItem.CHOSEN, onItemChosen);
-    item.addEventListener(MenuItem.UNCHOSEN, onItemUnchosen);
+    item.addEventListener(MenuItemEvent.CHOOSE, onItemChosen);
     addChild(item);
     resize(width, height);
   }
@@ -1039,19 +1040,19 @@ class MenuPopup extends Button
   protected override function onMouseUp(e:MouseEvent):void 
   {
     super.onMouseUp(e);
-    if (visible) {
+    if (_chosen != null) {
       dispatchEvent(new MenuItemEvent(_chosen));
       _chosen = null;
     }
   }
 
-  private function onItemChosen(e:Event):void
+  private function onItemChosen(e:MenuItemEvent):void
   {
-    _chosen = MenuItem(e.target);
-  }
-  private function onItemUnchosen(e:Event):void
-  {
-    _chosen = null;
+    if (e.item != null) {
+      _chosen = e.item;
+    } else if (e.target == _chosen) {
+      _chosen = null;
+    }
   }
 
   public override function update():void
@@ -1068,6 +1069,8 @@ class MenuPopup extends Button
 //
 class PopupMenuButtonOfDoom extends Button
 {
+  public var minDuration:int = 100;
+
   private var _popup:MenuPopup;
 
   public function PopupMenuButtonOfDoom()
@@ -1094,27 +1097,28 @@ class PopupMenuButtonOfDoom extends Button
   protected virtual function onItemChosen(e:MenuItemEvent):void 
   {
     dispatchEvent(new MenuItemEvent(e.item));
+    parent.removeChild(_popup);
   }
 
   protected override function onMouseDownLocal(e:MouseEvent):void 
   {
     super.onMouseDownLocal(e);
-    var p:Point = parent.globalToLocal(new Point(e.stageX, e.stageY));
-    _popup.x = p.x;
-    _popup.y = p.y;
-    parent.addChild(_popup);
-  }
-
-  protected override function onMouseUpLocal(e:MouseEvent):void 
-  {
-    parent.removeChild(_popup);
-    super.onMouseUpLocal(e);
+    if (_popup.parent != null) {
+      parent.removeChild(_popup);
+    } else {
+      var p:Point = parent.globalToLocal(new Point(e.stageX, e.stageY));
+      _popup.x = p.x;
+      _popup.y = p.y;
+      parent.addChild(_popup);
+    }
   }
 
   public override function update():void
   {
     super.update();
-    _popup.update();
+    if (_popup.parent != null) {
+      _popup.update();
+    }
   }
 }
 
