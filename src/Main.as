@@ -500,8 +500,12 @@ public class Main extends Sprite
   private function stopPlaying():void
   {
     if (_stream != null) {
-      log("Stopping");
-      updateStatus(STOPPING);
+      if (isRTMP) {
+	log("Stopping");
+	updateStatus(STOPPING);
+      } else {
+	updateStatus(STOPPED);
+      }
       _stream.close();
     }
   }
