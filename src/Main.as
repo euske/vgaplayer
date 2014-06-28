@@ -68,35 +68,18 @@ public class Main extends Sprite
     addChild(_video);
 
     _overlay = new OverlayButton();
-    _overlay.buttonBgColor = _params.buttonBgColor;
-    _overlay.buttonFgColor = _params.buttonFgColor;
+    _overlay.style = _params.style;
     _overlay.addEventListener(MouseEvent.CLICK, onOverlayClick);
     addChild(_overlay);
 
     _control = new ControlBar(_params.fullscreen);
-    _control.statusDisplay.bgColor = _params.buttonBgColor;
-    _control.statusDisplay.fgColor = _params.buttonFgColor;
-    _control.statusDisplay.hiColor = _params.buttonHiColor;
-    _control.playButton.bgColor = _params.buttonBgColor;
-    _control.playButton.fgColor = _params.buttonFgColor;
-    _control.playButton.hiColor = _params.buttonHiColor;
-    _control.playButton.borderColor = _params.buttonBorderColor;
+    _control.style = _params.style;
     _control.playButton.addEventListener(MouseEvent.CLICK, onPlayPauseClick);
-    _control.volumeSlider.bgColor = _params.buttonBgColor;
-    _control.volumeSlider.fgColor = _params.buttonFgColor;
-    _control.volumeSlider.hiColor = _params.buttonHiColor;
     _control.volumeSlider.addEventListener(Slider.CLICK, onVolumeSliderClick);
     _control.volumeSlider.addEventListener(Slider.CHANGED, onVolumeSliderChanged);
-    _control.seekBar.bgColor = _params.buttonBgColor;
-    _control.seekBar.fgColor = _params.buttonFgColor;
-    _control.seekBar.hiColor = _params.buttonHiColor;
     _control.seekBar.addEventListener(Slider.CHANGED, onSeekBarChanged);
     _control.seekBar.isStatic = !isRTMP;
     if (_control.fsButton != null) {
-      _control.fsButton.bgColor = _params.buttonBgColor;
-      _control.fsButton.fgColor = _params.buttonFgColor;
-      _control.fsButton.hiColor = _params.buttonHiColor;
-      _control.fsButton.borderColor = _params.buttonBorderColor;
       _control.fsButton.toFullscreen = (stage.displayState == StageDisplayState.NORMAL);
       _control.fsButton.addEventListener(MouseEvent.CLICK, onFullscreenClick);
     }
@@ -109,10 +92,7 @@ public class Main extends Sprite
     if (false) {
       // menu testing.
       var menu:PopupMenuButtonOfDoom = new PopupMenuButtonOfDoom();
-      menu.bgColor = _params.buttonBgColor;
-      menu.fgColor = _params.buttonFgColor;
-      menu.hiColor = _params.buttonHiColor;
-      menu.borderColor = _params.buttonBorderColor;
+      menu.style = _params.style;
       menu.x = menu.y = 100;
       menu.resize(100, 100);
       menu.addTextItem("Snarf.");
@@ -626,6 +606,7 @@ import flash.ui.Keyboard;
 import flash.utils.getTimer;
 import flash.geom.Point;
 
+
 //  Params
 //  Object to hold the parameters given by FlashVars.
 //
@@ -644,10 +625,7 @@ class Params extends Object
   public var autoplay:Boolean = true;
 
   public var bgColor:uint = 0x000000;
-  public var buttonBgColor:uint = 0x448888ff;
-  public var buttonFgColor:uint = 0xcc888888;
-  public var buttonHiColor:uint = 0xffeeeeee;
-  public var buttonBorderColor:uint = 0x88ffffff;
+  public var style:Style = new Style();
   public var volumeMutedColor:uint = 0xffff0000;
   public var imageUrl:String = null;
 
@@ -708,19 +686,19 @@ class Params extends Object
       }
       // buttonBgColor
       if (obj.buttonBgColor) {
-	buttonBgColor = parseColor(obj.buttonBgColor);
+	style.bgColor = parseColor(obj.buttonBgColor);
       }
       // buttonFgColor
       if (obj.buttonFgColor) {
-	buttonFgColor = parseColor(obj.buttonFgColor);
+	style.fgColor = parseColor(obj.buttonFgColor);
       }
       // buttonHiColor
       if (obj.buttonHiColor) {
-	buttonHiColor = parseColor(obj.buttonHiColor);
+	style.hiColor = parseColor(obj.buttonHiColor);
       }
       // buttonBorderColor
       if (obj.buttonBorderColor) {
-	buttonBorderColor = parseColor(obj.buttonBorderColor);
+	style.borderColor = parseColor(obj.buttonBorderColor);
       }
       // volumeMutedColor
       if (obj.volumeMutedColor) {
@@ -748,15 +726,24 @@ class Params extends Object
 }
 
 
-//  Control
-//  Base class for buttons/sliders.
+//  Style
+//  Color scheme.
 //
-class Control extends Sprite
+class Style extends Object
 {
   public var bgColor:uint = 0x448888ff;
   public var fgColor:uint = 0xcc888888;
   public var hiColor:uint = 0xffeeeeee;
   public var borderColor:uint = 0x88ffffff;
+}
+
+
+//  Control
+//  Base class for buttons/sliders.
+//
+class Control extends Sprite
+{
+  public var style:Style = new Style();
 
   private var _width:int;
   private var _height:int;
@@ -842,7 +829,7 @@ class Control extends Sprite
   public virtual function repaint():void
   {
     graphics.clear();
-    graphics.beginFill(bgColor, (bgColor>>>24)/255);
+    graphics.beginFill(style.bgColor, (style.bgColor>>>24)/255);
     graphics.drawRect(0, 0, _width, _height);
     graphics.endFill();
   }
@@ -873,7 +860,7 @@ class Button extends Control
     super.repaint();
 
     if (highlit) {
-      graphics.lineStyle(0, borderColor, (borderColor>>>24)/255);
+      graphics.lineStyle(0, style.borderColor, (style.borderColor>>>24)/255);
       graphics.drawRect(0, 0, width, height);
     }
   }
@@ -997,9 +984,9 @@ class TextMenuItem extends MenuItem
     super.repaint();
 
     if (highlit) {
-      _text.textColor = hiColor;
+      _text.textColor = style.hiColor;
     } else {
-      _text.textColor = fgColor;
+      _text.textColor = style.fgColor;
     }
   }
 }
@@ -1026,6 +1013,7 @@ class MenuPopup extends Button
   public function addTextItem(label:String, value:Object=null):void
   {
     var item:TextMenuItem = new TextMenuItem();
+    item.style = style;
     item.label = label;
     item.value = (value != null)? value : label;
     addItem(item);
@@ -1081,10 +1069,7 @@ class PopupMenuButtonOfDoom extends Button
   {
     super();
     _popup = new MenuPopup();
-    _popup.bgColor = bgColor;
-    _popup.fgColor = fgColor;
-    _popup.hiColor = hiColor;
-    _popup.borderColor = borderColor;
+    _popup.style = style;
     _popup.addEventListener(MenuItemEvent.CHOOSE, onItemChosen);
   }
 
@@ -1178,6 +1163,17 @@ class ControlBar extends Sprite
   public function set autohide(value:Boolean):void
   {
     _autohide = value;
+  }
+
+  public function set style(value:Style):void
+  {
+    playButton.style = value;
+    volumeSlider.style = value;
+    seekBar.style = value;
+    statusDisplay.style = value;
+    if (fsButton != null) {
+      fsButton.style = value;
+    }
   }
 
   public function show(duration:int=2000):void
@@ -1289,7 +1285,7 @@ class VolumeSlider extends Slider
   {
     super.repaint();
     var size:int = buttonSize/4;
-    var color:uint = (highlit)? hiColor : fgColor;
+    var color:uint = (highlit)? style.hiColor : style.fgColor;
     var cx:int = width/2;
     var cy:int = height/2;
 
@@ -1442,7 +1438,7 @@ class SeekBar extends Slider
   {
     super.repaint();
     var size:int = barSize;
-    var color:uint = (highlit)? hiColor : fgColor;
+    var color:uint = (highlit)? style.hiColor : style.fgColor;
     var t:Number = (_locked)? _goal : _time;
 
     _text.text = (Math.floor(t/3600)+":"+
@@ -1489,7 +1485,7 @@ class FullscreenButton extends Button
   {
     super.repaint();
     var size:int = buttonSize/16;
-    var color:uint = (highlit)? hiColor : fgColor;
+    var color:uint = (highlit)? style.hiColor : style.fgColor;
     var cx:int = width/2 + ((pressed)? 1 : 0);
     var cy:int = height/2 + ((pressed)? 1 : 0);
 
@@ -1528,7 +1524,7 @@ class PlayPauseButton extends Button
   {
     super.repaint();
     var size:int = buttonSize/16;
-    var color:uint = (highlit)? hiColor : fgColor;
+    var color:uint = (highlit)? style.hiColor : style.fgColor;
     var cx:int = width/2 + ((pressed)? 1 : 0);
     var cy:int = height/2 + ((pressed)? 1 : 0);
 
@@ -1589,7 +1585,7 @@ class StatusDisplay extends Control
   public override function repaint():void
   {
     super.repaint();
-    var color:uint = (highlit)? hiColor : fgColor;
+    var color:uint = (highlit)? style.hiColor : style.fgColor;
     _text.textColor = color;
   }
 }
@@ -1600,10 +1596,9 @@ class StatusDisplay extends Control
 //
 class OverlayButton extends Sprite
 {
+  public var style:Style = new Style();
   public var buttonSize:int = 100;
   public var fadeDuration:int = 2000;
-  public var buttonBgColor:uint = 0x448888ff;
-  public var buttonFgColor:uint = 0xcc888888;
 
   private var _size:int;
   private var _width:int;
@@ -1665,17 +1660,17 @@ class OverlayButton extends Sprite
     var cx:int = width/2;
     var cy:int = height/2;
 
-    graphics.beginFill(buttonBgColor, (buttonBgColor>>>24)/255);
+    graphics.beginFill(style.bgColor, (style.bgColor>>>24)/255);
     graphics.drawRect(cx-buttonSize/2, cy-buttonSize/2, buttonSize, buttonSize);
     graphics.endFill();
     if (_toPlay) {
-      graphics.beginFill(buttonFgColor, (buttonFgColor>>>24)/255);
+      graphics.beginFill(style.fgColor, (style.fgColor>>>24)/255);
       graphics.moveTo(cx-size*4, cy-size*4);
       graphics.lineTo(cx-size*4, cy+size*4);
       graphics.lineTo(cx+size*4, cy);
       graphics.endFill();
     } else {
-      graphics.beginFill(buttonFgColor, (buttonFgColor>>>24)/255);
+      graphics.beginFill(style.fgColor, (style.fgColor>>>24)/255);
       graphics.drawRect(cx-size*3, cy-size*4, size*2, size*8);
       graphics.drawRect(cx+size*1, cy-size*4, size*2, size*8);
       graphics.endFill();
