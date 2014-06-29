@@ -22,6 +22,8 @@ import flash.net.NetConnection;
 import flash.net.NetStream;
 import flash.net.URLRequest;
 import flash.ui.Keyboard;
+import flash.external.ExternalInterface;
+import flash.system.Security;
 
 //  Main 
 //
@@ -92,13 +94,6 @@ public class Main extends Sprite
     _debugdisp.visible = _params.debug;
     addChild(_debugdisp);
 
-    if (_params.menu) {
-      // menu testing.
-      _control.popupMenu.addTextItem("Snarf.");
-      _control.popupMenu.addTextItem("Goggy?");
-      _control.popupMenu.addTextItem("IHKH!");
-    }
-
     stage.addEventListener(Event.RESIZE, onResize);
     stage.addEventListener(Event.ENTER_FRAME, onEnterFrame);
     stage.addEventListener(FullScreenEvent.FULL_SCREEN, onFullScreen);
@@ -122,8 +117,28 @@ public class Main extends Sprite
     _connection.addEventListener(AsyncErrorEvent.ASYNC_ERROR, onAsyncErrorEvent);
 
     updateStatus(STOPPED);
+
+    if (ExternalInterface.available) {
+      // Allowing security domains. 
+      // Not sure if this is the right way...
+      var domain:String = (Security.pageDomain == null)? "*" : Security.pageDomain;
+      log("ExternalInterface: allowing: "+domain);
+      Security.allowDomain(domain);
+      ExternalInterface.addCallback("VGAPlayerAddMenuItem", externalAddMenuItem);
+      // Notify the browser.
+      ExternalInterface.call("VGAPlayerOnLoad");
+    }
+
     if (_params.autoplay) {
       connect();
+    }
+  }
+
+  private function externalAddMenuItem(label:String, value:String=null):void
+  {
+    log("externalAddMenuItem: "+label+", "+value);
+    if (_control.popupMenu != null) {
+      _control.popupMenu.addTextItem(label, value);
     }
   }
 
@@ -396,7 +411,7 @@ public class Main extends Sprite
 
   private function onMenuItemChoose(e:MenuItemEvent):void
   {
-    log(e.item);
+    log(e.item.value);
   }
   
   private function proportionalScaleToStage(obj:DisplayObject, w:int, h:int):void
