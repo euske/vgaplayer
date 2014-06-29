@@ -72,13 +72,16 @@ public class Main extends Sprite
     _overlay.addEventListener(MouseEvent.CLICK, onOverlayClick);
     addChild(_overlay);
 
-    _control = new ControlBar(_params.fullscreen);
+    _control = new ControlBar(_params.fullscreen, _params.menu);
     _control.style = _params.style;
     _control.playButton.addEventListener(MouseEvent.CLICK, onPlayPauseClick);
     _control.volumeSlider.addEventListener(Slider.CLICK, onVolumeSliderClick);
     _control.volumeSlider.addEventListener(Slider.CHANGED, onVolumeSliderChanged);
     _control.seekBar.addEventListener(Slider.CHANGED, onSeekBarChanged);
     _control.seekBar.isStatic = !isRTMP;
+    if (_control.popupMenu != null) {
+      _control.popupMenu.addEventListener(MenuItemEvent.CHOOSE, onMenuItemChoose);
+    }
     if (_control.fsButton != null) {
       _control.fsButton.toFullscreen = (stage.displayState == StageDisplayState.NORMAL);
       _control.fsButton.addEventListener(MouseEvent.CLICK, onFullscreenClick);
@@ -89,18 +92,11 @@ public class Main extends Sprite
     _debugdisp.visible = _params.debug;
     addChild(_debugdisp);
 
-    if (false) {
+    if (_params.menu) {
       // menu testing.
-      var menu:PopupMenuButtonOfDoom = new PopupMenuButtonOfDoom();
-      menu.style = _params.style;
-      menu.x = menu.y = 100;
-      menu.resize(100, 100);
-      menu.addTextItem("Snarf.");
-      menu.addTextItem("Goggy?");
-      menu.addTextItem("IHKH!");
-      addChild(menu);
-      menu.addEventListener(Event.ENTER_FRAME, function (e:Event):void { menu.update(); });
-      menu.addEventListener(MenuItemEvent.CHOOSE, function (e:MenuItemEvent):void { trace(e.item); });
+      _control.popupMenu.addTextItem("Snarf.");
+      _control.popupMenu.addTextItem("Goggy?");
+      _control.popupMenu.addTextItem("IHKH!");
     }
 
     stage.addEventListener(Event.RESIZE, onResize);
@@ -398,6 +394,11 @@ public class Main extends Sprite
 			  StageDisplayState.NORMAL);
   }
 
+  private function onMenuItemChoose(e:MenuItemEvent):void
+  {
+    log(e.item);
+  }
+  
   private function proportionalScaleToStage(obj:DisplayObject, w:int, h:int):void
   {
     var r:Number = Math.min((stage.stageWidth / w),
@@ -620,6 +621,7 @@ class Params extends Object
   public var backBufferTime:Number = 30.0;
   public var inBufferSeek:Boolean = false;
   public var fullscreen:Boolean = false;
+  public var menu:Boolean = false;
   public var smoothing:Boolean = false;
   public var start:Number = 0.0;
   public var autoplay:Boolean = true;
@@ -666,6 +668,10 @@ class Params extends Object
       // fullscreen
       if (obj.fullscreen) {
 	fullscreen = parseBoolean(obj.fullscreen);
+      }
+      // menu
+      if (obj.menu) {
+	menu = parseBoolean(obj.menu);
       }
       // smoothing
       if (obj.smoothing) {
@@ -1120,16 +1126,18 @@ class ControlBar extends Sprite
   public var margin:int = 4;
   public var fadeDuration:int = 1000;
 
-  public var statusDisplay:StatusDisplay;
   public var playButton:PlayPauseButton;
   public var volumeSlider:VolumeSlider;
   public var seekBar:SeekBar;
+  public var statusDisplay:StatusDisplay;
+  public var popupMenu:PopupMenuButtonOfDoom;
   public var fsButton:FullscreenButton;
 
   private var _autohide:Boolean;
   private var _timeout:int;
 
-  public function ControlBar(fullscreen:Boolean=false)
+  public function ControlBar(fullscreen:Boolean=false, 
+			     menu:Boolean=false)
   {
     super();
     _timeout = -fadeDuration;
@@ -1145,14 +1153,19 @@ class ControlBar extends Sprite
     seekBar = new SeekBar();
     seekBar.visible = false;
     addChild(seekBar);
+
+    statusDisplay = new StatusDisplay();
+    addChild(statusDisplay);
+
+    if (menu) {
+      popupMenu = new PopupMenuButtonOfDoom();
+      addChild(popupMenu);
+    }
     
     if (fullscreen) {
       fsButton = new FullscreenButton();
       addChild(fsButton);
     }
-
-    statusDisplay = new StatusDisplay();
-    addChild(statusDisplay);
   }
   
   public function get autohide():Boolean
@@ -1171,6 +1184,9 @@ class ControlBar extends Sprite
     volumeSlider.style = value;
     seekBar.style = value;
     statusDisplay.style = value;
+    if (popupMenu != null) {
+      popupMenu.style = value;
+    }
     if (fsButton != null) {
       fsButton.style = value;
     }
@@ -1204,6 +1220,13 @@ class ControlBar extends Sprite
       x1 = fsButton.x - margin;
     }
     
+    if (popupMenu != null) {
+      popupMenu.resize(size, size);
+      popupMenu.x = x1 - popupMenu.width;
+      popupMenu.y = margin;
+      x1 = popupMenu.x - margin;
+    }
+    
     volumeSlider.resize(size*2, size);
     volumeSlider.x = x1 - volumeSlider.width;
     volumeSlider.y = margin;
@@ -1230,6 +1253,9 @@ class ControlBar extends Sprite
     volumeSlider.update();
     seekBar.update();
     statusDisplay.update();
+    if (popupMenu != null) {
+      popupMenu.update();
+    }
     if (fsButton != null) {
       fsButton.update();
     }
