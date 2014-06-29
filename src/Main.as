@@ -592,7 +592,7 @@ public class Main extends Sprite
 
 } // package
 
-/// Private classed below.
+/// Private classes below.
 
 import flash.display.Sprite;
 import flash.events.Event;
@@ -1016,23 +1016,24 @@ class MenuPopup extends Button
     return _chosen;
   }
 
-  public function addTextItem(label:String, value:Object=null):void
+  public function addTextItem(label:String, value:Object=null):MenuItem
   {
     var item:TextMenuItem = new TextMenuItem();
-    item.style = style;
     item.label = label;
     item.value = (value != null)? value : label;
-    addItem(item);
+    return addItem(item);
   }
 
-  public function addItem(item:MenuItem):void
+  public function addItem(item:MenuItem):MenuItem
   {
     _items.push(item);
+    item.style = style;
     item.x = 0;
     item.y = height;
     item.addEventListener(MenuItemEvent.CHOOSE, onItemChosen);
     addChild(item);
     resize(width, height);
+    return item;
   }
 
   protected override function onMouseUp(e:MouseEvent):void 
@@ -1079,14 +1080,14 @@ class PopupMenuButtonOfDoom extends Button
     _popup.addEventListener(MenuItemEvent.CHOOSE, onItemChosen);
   }
 
-  public function addTextItem(label:String, value:Object=null):void
+  public function addTextItem(label:String, value:Object=null):MenuItem
   {
-    _popup.addTextItem(label, value);
+    return _popup.addTextItem(label, value);
   }
 
-  public function addItem(item:MenuItem):void
+  public function addItem(item:MenuItem):MenuItem
   {
-    _popup.addItem(item);
+    return _popup.addItem(item);
   }
   
   protected virtual function onItemChosen(e:MenuItemEvent):void 
@@ -1099,11 +1100,18 @@ class PopupMenuButtonOfDoom extends Button
   {
     super.onMouseDownLocal(e);
     if (_popup.parent != null) {
+      // Mouse is clicked outside the menu.
       parent.removeChild(_popup);
     } else {
       var p:Point = parent.globalToLocal(new Point(e.stageX, e.stageY));
       _popup.x = p.x;
+      if (parent.width < _popup.x+_popup.width) {
+	_popup.x -= _popup.width;
+      }
       _popup.y = p.y;
+      if (parent.height < _popup.y+_popup.height) {
+	_popup.y -= _popup.height;
+      }
       parent.addChild(_popup);
     }
   }
