@@ -92,6 +92,7 @@ public class Main extends Sprite
     _debugdisp.visible = _params.debug;
     addChild(_debugdisp);
 
+    addEventListener(Event.ADDED_TO_STAGE, onAdded);
     stage.addEventListener(Event.RESIZE, onResize);
     stage.addEventListener(Event.ENTER_FRAME, onEnterFrame);
     stage.addEventListener(FullScreenEvent.FULL_SCREEN, onFullScreen);
@@ -123,20 +124,7 @@ public class Main extends Sprite
       log("ExternalInterface: allowing: "+domain);
       Security.allowDomain(domain);
       ExternalInterface.addCallback("VGAPlayerAddMenuItem", externalAddMenuItem);
-      // Notify the browser.
-      ExternalInterface.call("VGAPlayerOnLoad");
-    }
-
-    if (_params.autoplay) {
-      connect(_params.url);
-    }
-  }
-
-  private function externalAddMenuItem(label:String, value:String=null):void
-  {
-    log("externalAddMenuItem: "+label+", "+value);
-    if (_control.popupMenu != null) {
-      _control.popupMenu.addTextItem(label, value);
+      ExternalInterface.addCallback("VGAPlayerConnect", externalConnect);
     }
   }
 
@@ -188,6 +176,11 @@ public class Main extends Sprite
       }
     }
     return url;
+  }
+
+  private function onAdded(e:Event):void
+  {
+    init();
   }
 
   private function onResize(e:Event):void
@@ -405,7 +398,11 @@ public class Main extends Sprite
 
   private function onMenuItemChoose(e:MenuItemEvent):void
   {
-    log(e.item.value);
+    log("onMenuItemChoose:", e.item.value);
+    
+    if (ExternalInterface.available) {
+      ExternalInterface.call("VGAPlayerOnMenuChoose", e.item.value);
+    }
   }
   
   private function proportionalScaleToStage(obj:DisplayObject, w:int, h:int):void
@@ -496,6 +493,20 @@ public class Main extends Sprite
     }
   }
 
+  private function init():void
+  {
+    log("init");
+
+    // Notify the browser if possible.
+    if (ExternalInterface.available) {
+      ExternalInterface.call("VGAPlayerOnLoad");
+    }
+
+    if (_params.autoplay) {
+      connect(_params.url);
+    }
+  }
+
   private function resize():void
   {
     log("resize:", stage.stageWidth+","+stage.stageHeight);
@@ -537,8 +548,25 @@ public class Main extends Sprite
     }
   }
 
+  private function externalAddMenuItem(label:String, value:String=null):void
+  {
+    log("externalAddMenuItem: "+label+", "+value);
+    if (_control.popupMenu != null) {
+      _control.popupMenu.addTextItem(label, value);
+    }
+  }
+
+  private function externalConnect(url:String):void
+  {
+    stopPlaying();
+    connect(url);
+  }
+
   public function connect(url:String):void
   {
+    if (_connection.connected) {
+      _connection.close();
+    }
     if (url != null && !_connection.connected) {
       url = getBaseURL(url);
       if (url.substr(0, 5) == "rtmp:") {
