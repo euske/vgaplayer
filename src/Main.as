@@ -89,7 +89,7 @@ public class Main extends Sprite
       _control.fsButton.addEventListener(MouseEvent.CLICK, onFullscreenClick);
     }
     addChild(_control);
-    
+
     _debugdisp = new DebugDisplay();
     _debugdisp.visible = _params.debug;
     addChild(_debugdisp);
@@ -799,8 +799,7 @@ class Style extends Object
 //
 class Control extends Sprite
 {
-  public var style:Style = new Style();
-
+  private var _style:Style = new Style();
   private var _width:int;
   private var _height:int;
 
@@ -830,6 +829,16 @@ class Control extends Sprite
   {
     stage.addEventListener(MouseEvent.MOUSE_DOWN, onMouseDown);
     stage.addEventListener(MouseEvent.MOUSE_UP, onMouseUp);
+  }
+
+  public virtual function get style():Style
+  {
+    return _style;
+  }
+
+  public virtual function set style(value:Style):void
+  {
+    _style = value;
   }
 
   protected virtual function onMouseDown(e:MouseEvent):void 
@@ -995,6 +1004,11 @@ class MenuItem extends Control
 {
   public var value:Object;
 
+  public override function toString():String
+  {
+    return ("<MenuItem "+value+">");
+  }
+
   protected override function onMouseOver(e:MouseEvent):void 
   {
     super.onMouseOver(e);
@@ -1052,6 +1066,10 @@ class TextMenuItem extends MenuItem
 //
 class MenuPopup extends Button
 {
+  public var margin:int = 2;
+
+  private var _totalWidth:int;
+  private var _totalHeight:int;
   private var _items:Array;
   private var _chosen:MenuItem;
 
@@ -1059,6 +1077,16 @@ class MenuPopup extends Button
   {
     super();
     _items = new Array();
+    _totalWidth = 0;
+    _totalHeight = 0;
+  }
+
+  public override function set style(value:Style):void
+  {
+    super.style = value;
+    for each (var item:MenuItem in _items) {
+      item.style = value;
+    }
   }
 
   public function get chosen():MenuItem
@@ -1077,12 +1105,14 @@ class MenuPopup extends Button
   public function addItem(item:MenuItem):MenuItem
   {
     _items.push(item);
+    _totalWidth = Math.max(_totalWidth, item.width);
+    _totalHeight += item.height;
     item.style = style;
-    item.x = 0;
+    item.x = margin;
     item.y = height;
     item.addEventListener(MenuItemEvent.CHOOSE, onItemChosen);
     addChild(item);
-    resize(width, height);
+    resize(_totalWidth+margin*2, _totalHeight+margin*2);
     return item;
   }
 
@@ -1121,13 +1151,19 @@ class PopupMenuButtonOfDoom extends Button
   public var minDuration:int = 100;
 
   private var _popup:MenuPopup;
+  private var _timeout:int;
 
   public function PopupMenuButtonOfDoom()
   {
     super();
     _popup = new MenuPopup();
-    _popup.style = style;
     _popup.addEventListener(MenuItemEvent.CHOOSE, onItemChosen);
+  }
+
+  public override function set style(value:Style):void
+  {
+    super.style = value;
+    _popup.style = value;
   }
 
   public function addTextItem(label:String, value:Object=null):MenuItem
@@ -1143,14 +1179,17 @@ class PopupMenuButtonOfDoom extends Button
   protected virtual function onItemChosen(e:MenuItemEvent):void 
   {
     dispatchEvent(new MenuItemEvent(e.item));
-    parent.removeChild(_popup);
+    if (_popup.parent != null) {
+      parent.removeChild(_popup);
+    }
   }
 
   protected override function onMouseDownLocal(e:MouseEvent):void 
   {
     super.onMouseDownLocal(e);
+    trace("mousedown");
     if (_popup.parent != null) {
-      // Mouse is clicked outside the menu.
+      // The menu is still open.
       parent.removeChild(_popup);
     } else {
       var p:Point = parent.globalToLocal(new Point(e.stageX, e.stageY));
@@ -1163,6 +1202,18 @@ class PopupMenuButtonOfDoom extends Button
 	_popup.y -= _popup.height;
       }
       parent.addChild(_popup);
+      _timeout = getTimer() + minDuration;
+    }
+  }
+
+  protected override function onMouseUpLocal(e:MouseEvent):void 
+  {
+    super.onMouseUpLocal(e);
+    trace("mouseup");
+    if (_popup.parent != null) {
+      if (_timeout < getTimer()) {
+	parent.removeChild(_popup);
+      }
     }
   }
 
