@@ -33,6 +33,7 @@ public class Main extends Sprite
   private const STARTED:String = "STARTED";
   private const STOPPING:String = "STOPPING";
   private const STOPPED:String = "STOPPED";
+  private const PAUSED:String = "PAUSED"; // only used for non-remoting streams.
   
   private var _params:Params;
   private var _video:Video;
@@ -42,6 +43,7 @@ public class Main extends Sprite
   private var _imageLoader:Loader;
 
   private var _streamPath:String;
+  private var _remoting:Boolean; // true if connected via RTMP or FMS.
   private var _connection:NetConnection;
   private var _stream:NetStream;
   private var _videoMetaData:Object;
@@ -282,7 +284,7 @@ public class Main extends Sprite
       _stream.maxPauseBufferTime = _params.maxPauseBufferTime;
       _stream.backBufferTime = _params.backBufferTime;
       _video.attachNetStream(_stream);
-      _control.seekBar.isStatic = (nc.uri == null);
+      _control.seekBar.isStatic = !_remoting;
       updateVolume(_control.volumeSlider);
       startPlaying(_params.start);
       break;
@@ -458,6 +460,7 @@ public class Main extends Sprite
       break;
 
     case STOPPED:
+    case PAUSED:
       _overlay.toPlay = true;
       _overlay.autohide = false;
       _control.playButton.toPlay = true;
@@ -483,13 +486,14 @@ public class Main extends Sprite
   private function stopPlaying():void
   {
     if (_stream != null) {
-      if (_connection.uri != null) {
+      if (_remoting) {
 	log("Stopping");
 	updateStatus(STOPPING);
+	_stream.close();
       } else {
-	updateStatus(STOPPED);
+	updateStatus(PAUSED);
+	_stream.pause();
       }
-      _stream.close();
     }
   }
 
@@ -572,9 +576,11 @@ public class Main extends Sprite
       if (url.substr(0, 5) == "rtmp:") {
 	var i:int = url.lastIndexOf("/");
 	_streamPath = url.substr(i+1);
+	_remoting = true;
 	url = url.substr(0, i);
       } else {
 	_streamPath = url;
+	_remoting = false;
 	url = null;
       }
       log("Connecting:", url);
@@ -603,6 +609,13 @@ public class Main extends Sprite
 	  startPlaying(_control.seekBar.time);
 	} else {
 	  connect(_params.url);
+	}
+      }
+      break;
+    case PAUSED:
+      if (playing) {
+	if (_stream != null) {
+	  _stream.resume();
 	}
       }
       break;
