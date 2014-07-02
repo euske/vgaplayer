@@ -82,6 +82,7 @@ public class Main extends Sprite
     _control.volumeSlider.addEventListener(Slider.CHANGED, onVolumeSliderChanged);
     _control.seekBar.addEventListener(Slider.CHANGED, onSeekBarChanged);
     if (_control.popupMenu != null) {
+      _control.popupMenu.container = this;
       _control.popupMenu.addEventListener(MenuItemEvent.CHOOSE, onMenuItemChoose);
     }
     if (_control.fsButton != null) {
@@ -95,12 +96,12 @@ public class Main extends Sprite
     addChild(_debugdisp);
 
     addEventListener(Event.ADDED_TO_STAGE, onAdded);
+    addEventListener(MouseEvent.MOUSE_DOWN, onMouseDown);
+    addEventListener(MouseEvent.MOUSE_UP, onMouseUp);
+    addEventListener(MouseEvent.MOUSE_MOVE, onMouseMove);
     stage.addEventListener(Event.RESIZE, onResize);
     stage.addEventListener(Event.ENTER_FRAME, onEnterFrame);
     stage.addEventListener(FullScreenEvent.FULL_SCREEN, onFullScreen);
-    stage.addEventListener(MouseEvent.MOUSE_DOWN, onMouseDown);
-    stage.addEventListener(MouseEvent.MOUSE_UP, onMouseUp);
-    stage.addEventListener(MouseEvent.MOUSE_MOVE, onMouseMove);
     stage.addEventListener(KeyboardEvent.KEY_DOWN, onKeyDown);
     resize();
 
@@ -645,6 +646,7 @@ public class Main extends Sprite
 /// Private classes below.
 
 import flash.display.Sprite;
+import flash.display.DisplayObjectContainer;
 import flash.events.Event;
 import flash.events.MouseEvent;
 import flash.text.TextField;
@@ -1151,6 +1153,7 @@ class PopupMenuButtonOfDoom extends Button
   public var minDuration:int = 100;
 
   private var _popup:MenuPopup;
+  private var _container:DisplayObjectContainer;
   private var _timeout:int;
 
   public function PopupMenuButtonOfDoom()
@@ -1164,6 +1167,11 @@ class PopupMenuButtonOfDoom extends Button
   {
     super.style = value;
     _popup.style = value;
+  }
+
+  public function set container(value:DisplayObjectContainer):void
+  {
+    _container = value;
   }
 
   public function addTextItem(label:String, value:Object=null):MenuItem
@@ -1180,7 +1188,7 @@ class PopupMenuButtonOfDoom extends Button
   {
     dispatchEvent(new MenuItemEvent(e.item));
     if (_popup.parent != null) {
-      parent.removeChild(_popup);
+      _popup.parent.removeChild(_popup);
     }
   }
 
@@ -1190,18 +1198,19 @@ class PopupMenuButtonOfDoom extends Button
     trace("mousedown");
     if (_popup.parent != null) {
       // The menu is still open.
-      parent.removeChild(_popup);
+      _popup.parent.removeChild(_popup);
     } else {
-      var p:Point = parent.globalToLocal(new Point(e.stageX, e.stageY));
+      var container:DisplayObjectContainer = (_container != null)? _container : parent;
+      var p:Point = container.globalToLocal(new Point(e.stageX, e.stageY));
       _popup.x = p.x;
-      if (parent.width < _popup.x+_popup.width) {
+      if (container.width < _popup.x+_popup.width) {
 	_popup.x -= _popup.width;
       }
       _popup.y = p.y;
-      if (parent.height < _popup.y+_popup.height) {
+      if (container.height < _popup.y+_popup.height) {
 	_popup.y -= _popup.height;
       }
-      parent.addChild(_popup);
+      container.addChild(_popup);
       _timeout = getTimer() + minDuration;
     }
   }
@@ -1212,7 +1221,7 @@ class PopupMenuButtonOfDoom extends Button
     trace("mouseup");
     if (_popup.parent != null) {
       if (_timeout < getTimer()) {
-	parent.removeChild(_popup);
+	_popup.parent.removeChild(_popup);
       }
     }
   }
@@ -1665,8 +1674,8 @@ class PlayPauseButton extends Button
 
     if (_toPlay) {
       graphics.beginFill(color, (color>>>24)/255);
-      graphics.moveTo(cx-size*4, cy-size*4);
-      graphics.lineTo(cx-size*4, cy+size*4);
+      graphics.moveTo(cx-size*3, cy-size*4);
+      graphics.lineTo(cx-size*3, cy+size*4);
       graphics.lineTo(cx+size*4, cy);
       graphics.endFill();
     } else {
@@ -1800,8 +1809,8 @@ class OverlayButton extends Sprite
     graphics.endFill();
     if (_toPlay) {
       graphics.beginFill(style.fgColor, (style.fgColor>>>24)/255);
-      graphics.moveTo(cx-size*4, cy-size*4);
-      graphics.lineTo(cx-size*4, cy+size*4);
+      graphics.moveTo(cx-size*3, cy-size*4);
+      graphics.lineTo(cx-size*3, cy+size*4);
       graphics.lineTo(cx+size*4, cy);
       graphics.endFill();
     } else {
