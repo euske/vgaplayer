@@ -81,6 +81,19 @@ public class MenuPopup extends Button
       item.update();
     }
   }
+
+  public override function repaint():void
+  {
+    graphics.clear();
+    graphics.beginFill(0);
+    graphics.drawRect(0, 0, width, height);
+    graphics.endFill();
+
+    if (highlit) {
+      graphics.lineStyle(0, style.borderColor);
+      graphics.drawRect(0, 0, width, height);
+    }
+  }
 }
 
 } // package
