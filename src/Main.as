@@ -342,6 +342,10 @@ public class Main extends Sprite
       _control.seekBar.duration = _videoMetaData.duration;
       _control.seekBar.bytesTotal = _videoMetaData.filesize;
       _control.seekBar.visible = true;
+    } else {
+      _control.statusDisplay.visible = true;
+      _control.seekBar.duration = 0;
+      _control.seekBar.visible = false;
     }
     updateStatus(_state);
     resize();
