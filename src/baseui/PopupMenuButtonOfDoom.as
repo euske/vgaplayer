@@ -54,7 +54,6 @@ public class PopupMenuButtonOfDoom extends Button
   protected override function onMouseDownLocal(e:MouseEvent):void 
   {
     super.onMouseDownLocal(e);
-    trace("mousedown");
     if (_popup.parent != null) {
       // The menu is still open.
       _popup.parent.removeChild(_popup);
@@ -77,7 +76,6 @@ public class PopupMenuButtonOfDoom extends Button
   protected override function onMouseUpLocal(e:MouseEvent):void 
   {
     super.onMouseUpLocal(e);
-    trace("mouseup");
     if (_popup.parent != null) {
       if (_timeout < getTimer()) {
 	_popup.parent.removeChild(_popup);
