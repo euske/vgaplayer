@@ -4,7 +4,7 @@ import flash.events.MouseEvent;
 
 //  MenuPopup
 //
-public class MenuPopup extends Button
+public class MenuPopup extends Control
 {
   public var margin:int = 2;
 
@@ -44,14 +44,14 @@ public class MenuPopup extends Button
 
   public function addItem(item:MenuItem):MenuItem
   {
+    item.style = style;
+    item.x = margin;
+    item.y = margin+_totalHeight;
+    item.addEventListener(MenuItemEvent.CHOOSE, onItemChosen);
+    addChild(item);
     _items.push(item);
     _totalWidth = Math.max(_totalWidth, item.width);
     _totalHeight += item.height;
-    item.style = style;
-    item.x = margin;
-    item.y = height;
-    item.addEventListener(MenuItemEvent.CHOOSE, onItemChosen);
-    addChild(item);
     resize(_totalWidth+margin*2, _totalHeight+margin*2);
     return item;
   }
@@ -84,14 +84,16 @@ public class MenuPopup extends Button
 
   public override function repaint():void
   {
+    var w:int = _totalWidth+margin*2;
+    var h:int = _totalHeight+margin*2;
     graphics.clear();
-    graphics.beginFill(0);
-    graphics.drawRect(0, 0, width, height);
+    graphics.beginFill(style.hiBgColor, (style.hiBgColor>>>24)/255);
+    graphics.drawRect(0, 0, w, h);
     graphics.endFill();
 
     if (highlit) {
-      graphics.lineStyle(0, style.borderColor);
-      graphics.drawRect(0, 0, width, height);
+      graphics.lineStyle(0, style.borderColor, (style.borderColor>>>24)/255);
+      graphics.drawRect(0, 0, w, h);
     }
   }
 }

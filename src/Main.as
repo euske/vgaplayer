@@ -750,9 +750,13 @@ class Params extends Object
       if (obj.buttonFgColor) {
 	style.fgColor = parseColor(obj.buttonFgColor);
       }
-      // buttonHiColor
-      if (obj.buttonHiColor) {
-	style.hiColor = parseColor(obj.buttonHiColor);
+      // buttonHiFgColor
+      if (obj.buttonHiFgColor) {
+	style.hiFgColor = parseColor(obj.buttonHiFgColor);
+      }
+      // buttonHiBgColor
+      if (obj.buttonHiBgColor) {
+	style.hiBgColor = parseColor(obj.buttonHiBgColor);
       }
       // buttonBorderColor
       if (obj.buttonBorderColor) {

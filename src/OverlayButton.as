@@ -1,6 +1,7 @@
 package {
 
 import flash.display.Sprite;
+import flash.events.MouseEvent;
 import flash.utils.getTimer;
 import baseui.Style;
 
@@ -17,6 +18,7 @@ public class OverlayButton extends Sprite
   private var _width:int;
   private var _height:int;
   private var _invalidated:Boolean;
+  private var _highlit:Boolean;
   private var _toPlay:Boolean;
   private var _autohide:Boolean;
   private var _timeout:int;
@@ -26,6 +28,8 @@ public class OverlayButton extends Sprite
     super();
     _timeout = -fadeDuration;
     alpha = 0;
+    addEventListener(MouseEvent.MOUSE_OVER, onMouseOver);
+    addEventListener(MouseEvent.MOUSE_OUT, onMouseOut);
   }
 
   public function get toPlay():Boolean
@@ -47,6 +51,18 @@ public class OverlayButton extends Sprite
   public function set autohide(value:Boolean):void
   {
     _autohide = value;
+  }
+
+  protected virtual function onMouseOver(e:MouseEvent):void 
+  {
+    _highlit = true;
+    _invalidated = true;
+  }
+
+  protected virtual function onMouseOut(e:MouseEvent):void 
+  {
+    _highlit = false;
+    _invalidated = true;
   }
 
   public function resize(w:int, h:int):void
@@ -73,17 +89,19 @@ public class OverlayButton extends Sprite
     var cx:int = width/2;
     var cy:int = height/2;
 
-    graphics.beginFill(style.bgColor, (style.bgColor>>>24)/255);
+    var fgcolor:uint = (_highlit)? style.hiFgColor : style.fgColor;
+    var bgcolor:uint = (_highlit)? style.hiBgColor : style.bgColor;
+    graphics.beginFill(bgcolor, (bgcolor>>>24)/255);
     graphics.drawRect(cx-buttonSize/2, cy-buttonSize/2, buttonSize, buttonSize);
     graphics.endFill();
     if (_toPlay) {
-      graphics.beginFill(style.fgColor, (style.fgColor>>>24)/255);
+      graphics.beginFill(fgcolor, (fgcolor>>>24)/255);
       graphics.moveTo(cx-size*3, cy-size*4);
       graphics.lineTo(cx-size*3, cy+size*4);
       graphics.lineTo(cx+size*4, cy);
       graphics.endFill();
     } else {
-      graphics.beginFill(style.fgColor, (style.fgColor>>>24)/255);
+      graphics.beginFill(fgcolor, (fgcolor>>>24)/255);
       graphics.drawRect(cx-size*3, cy-size*4, size*2, size*8);
       graphics.drawRect(cx+size*1, cy-size*4, size*2, size*8);
       graphics.endFill();

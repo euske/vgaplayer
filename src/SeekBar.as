@@ -133,7 +133,7 @@ public class SeekBar extends Slider
   {
     super.repaint();
     var size:int = barSize;
-    var color:uint = (highlit)? style.hiColor : style.fgColor;
+    var color:uint = (highlit)? style.hiFgColor : style.fgColor;
     var t:Number = (_locked)? _goal : _time;
 
     _text.text = (Math.floor(t/3600)+":"+

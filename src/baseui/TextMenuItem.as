@@ -14,6 +14,7 @@ public class TextMenuItem extends MenuItem
     super();
     _text = new TextField();
     _text.selectable = false;
+    _text.background = true;
     _text.autoSize = TextFieldAutoSize.LEFT;
     addChild(_text);
   }
@@ -33,11 +34,8 @@ public class TextMenuItem extends MenuItem
   {
     super.repaint();
 
-    if (highlit) {
-      _text.textColor = style.hiColor;
-    } else {
-      _text.textColor = style.fgColor;
-    }
+    _text.backgroundColor = (highlit)? style.bgColor : style.hiBgColor;
+    _text.textColor = (highlit)? style.hiFgColor : style.fgColor;
   }
 }
 

@@ -24,7 +24,7 @@ public class FullscreenButton extends Button
   {
     super.repaint();
     var size:int = buttonSize/16;
-    var color:uint = (highlit)? style.hiColor : style.fgColor;
+    var color:uint = (highlit)? style.hiFgColor : style.fgColor;
     var cx:int = width/2 + ((pressed)? 1 : 0);
     var cy:int = height/2 + ((pressed)? 1 : 0);
 

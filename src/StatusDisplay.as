@@ -45,7 +45,7 @@ public class StatusDisplay extends Control
   public override function repaint():void
   {
     super.repaint();
-    var color:uint = (highlit)? style.hiColor : style.fgColor;
+    var color:uint = (highlit)? style.hiFgColor : style.fgColor;
     _text.textColor = color;
   }
 }

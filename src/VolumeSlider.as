@@ -52,7 +52,7 @@ public class VolumeSlider extends Slider
   {
     super.repaint();
     var size:int = buttonSize/4;
-    var color:uint = (highlit)? style.hiColor : style.fgColor;
+    var color:uint = (highlit)? style.hiFgColor : style.fgColor;
     var cx:int = width/2;
     var cy:int = height/2;
 

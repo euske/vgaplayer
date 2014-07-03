@@ -30,7 +30,7 @@ FlashVars Parameters:
   * bgColor: Background color. (default: "#000000")
   * buttonBgColor: Button background color. The upper 8 bits are for alpha. (default: "#448888ff")
   * buttonFgColor: Button foreground color. (default: "#cc888888")
-  * buttonHiColor: Button highlighting color. (default: "#ffeeeeee")
+  * buttonHiFgColor: Button highlighting color. (default: "#ffeeeeee")
   * buttonBorderColor: Button border color. (default: "#88ffffff")
   * volumeMutedColor: Color used when the volume is muted. (default: "#ffff0000")
   * imageUrl: Background image URL.

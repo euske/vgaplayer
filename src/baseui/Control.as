@@ -103,8 +103,9 @@ public class Control extends Sprite
 
   public virtual function repaint():void
   {
+    var color:uint = (highlit)? style.hiBgColor : style.bgColor;
     graphics.clear();
-    graphics.beginFill(style.bgColor, (style.bgColor>>>24)/255);
+    graphics.beginFill(color, (color>>>24)/255);
     graphics.drawRect(0, 0, _width, _height);
     graphics.endFill();
   }
