@@ -10,13 +10,13 @@ public class MenuPopup extends Control
 
   private var _totalWidth:int;
   private var _totalHeight:int;
-  private var _items:Array;
+  private var _items:Vector.<MenuItem>;
   private var _chosen:MenuItem;
 
   public function MenuPopup()
   {
     super();
-    _items = new Array();
+    _items = new Vector.<MenuItem>();
     _totalWidth = 0;
     _totalHeight = 0;
   }

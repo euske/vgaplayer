@@ -3,7 +3,7 @@ package {
 import flash.display.Sprite;
 import flash.utils.getTimer;
 import baseui.Style;
-import baseui.PopupMenuButtonOfDoom;
+import baseui.PopupMenuButton;
 
 //  ControlBar
 //  Bar shown at the bottom of screen containing buttons, etc.
@@ -17,7 +17,7 @@ public class ControlBar extends Sprite
   public var volumeSlider:VolumeSlider;
   public var seekBar:SeekBar;
   public var statusDisplay:StatusDisplay;
-  public var popupMenu:PopupMenuButtonOfDoom;
+  public var popupMenu:PopupMenuButton;
   public var fsButton:FullscreenButton;
 
   private var _autohide:Boolean;
@@ -150,3 +150,30 @@ public class ControlBar extends Sprite
 }
 
 } // package
+
+import baseui.PopupMenuButton;
+
+class PopupMenuButtonOfDoom extends PopupMenuButton
+{
+  public override function repaint():void
+  {
+    super.repaint();
+    
+    // draw a gear.
+    var size:int = buttonSize/8;
+    var color:uint = (highlit)? style.hiFgColor : style.fgColor;
+    var cx:int = width/2 + ((pressed)? 1 : 0);
+    var cy:int = height/2 + ((pressed)? 1 : 0);
+
+    graphics.beginFill(color, (color>>>24)/255);
+    graphics.moveTo(cx+size*3, cy);
+    const T:Number = 2.0*Math.PI/32;
+    for (var i:int = 0; i < 32; i++) {
+      var r:Number = ((i % 4) < 2)? 3 : 2;
+      graphics.lineTo(cx+Math.cos(T*i)*size*r, cy+Math.sin(T*i)*size*r);
+    }
+    graphics.lineTo(cx+size*3, cy);
+    graphics.drawCircle(cx, cy, size*1);
+    graphics.endFill();
+  }
+}

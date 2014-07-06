@@ -5,9 +5,9 @@ import flash.events.MouseEvent;
 import flash.geom.Point;
 import flash.utils.getTimer;
 
-//  PopupMenuButtonOfDoom
+//  PopupMenuButton
 //
-public class PopupMenuButtonOfDoom extends Button
+public class PopupMenuButton extends Button
 {
   public var minDuration:int = 100;
 
@@ -15,7 +15,7 @@ public class PopupMenuButtonOfDoom extends Button
   private var _container:DisplayObjectContainer;
   private var _timeout:int;
 
-  public function PopupMenuButtonOfDoom()
+  public function PopupMenuButton()
   {
     super();
     _popup = new MenuPopup();
