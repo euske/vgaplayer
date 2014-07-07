@@ -34,7 +34,7 @@ FlashVars Parameters:
   * buttonBorderColor: Button border color. (default: "#88ffffff")
   * volumeMutedColor: Color used when the volume is muted. (default: "#ffff0000")
   * imageUrl: Background image URL.
-  * menu: Add a menu. (Explained below.) (default: 0)
+  * menu: Add a menu. (Explained below.) (1: on, 0: off)
   * id: String to identify a Flash object. (Explained below.)
 
 Adding a Menu
@@ -42,7 +42,7 @@ Adding a Menu
 
 It is possible to add a menu. (Javascript required.)
 There are two Javascript callback functions: 
-`VGAPlayerOnLoad` and `VGAPlayerOnMenuChoose`
+`VGAPlayerOnLoad` and `VGAPlayerOnMenuChoose`.
 
     <script language="JavaScript">
     function VGAPlayerOnLoad(id) {
