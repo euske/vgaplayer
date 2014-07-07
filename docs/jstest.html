@@ -1,0 +1,24 @@
+<html>
+<head><title>VGAPlayer Javascript Test</title></head>
+<body>
+<script language="JavaScript">
+function VGAPlayerOnLoad(pid) {
+  // Called when a player is initialized.
+  //alert("VGAPlayerOnLoad: "+pid);
+  flashObject.VGAPlayerAddMenuItem("Live", "rtmp://tv.webport.tv/promo2/m6");
+  flashObject.VGAPlayerAddMenuItem("Static", "http://tabesugi.net/video/flv/yusuke100.flv");
+}
+function VGAPlayerOnMenuChoose(value) {
+  // Called when a menu item is chosen.
+  //alert("VGAPlayerOnMenuChoose: "+value);
+  flashObject.VGAPlayerConnect(value);
+}
+</script>
+  <embed src="vgaplayer.swf"
+	 id="flashObject" width="100%" height="99%" 
+	 allowScriptAccess="sameDomain"
+	 allowFullScreen="true"
+	 type="application/x-shockwave-flash"
+	 FlashVars="debug=1&amp;menu=1&amp;pid=jstest"
+	 pluginspage="http://www.adobe.com/go/getflashplayer" />
+</body></html>
