@@ -35,7 +35,7 @@ FlashVars Parameters:
   * volumeMutedColor: Color used when the volume is muted. (default: "#ffff0000")
   * imageUrl: Background image URL.
   * menu: Add a menu. (Explained below.) (1: on, 0: off)
-  * id: String to identify a Flash object. (Explained below.)
+  * pid: A string to identify a player in Javascript. (Explained below.)
 
 Adding a Menu
 -------------
@@ -45,7 +45,7 @@ There are two Javascript callback functions:
 `VGAPlayerOnLoad` and `VGAPlayerOnMenuChoose`.
 
     <script language="JavaScript">
-    function VGAPlayerOnLoad(id) {
+    function VGAPlayerOnLoad(pid) {
       // Called when a player is initialized.
       flashObject.VGAPlayerAddMenuItem("High Quality", "rtmp://rtmp.example.com/high");
       flashObject.VGAPlayerAddMenuItem("Low Quality", "rtmp://rtmp.example.com/low");
@@ -61,7 +61,7 @@ There are two Javascript callback functions:
       allowScriptAccess="sameDomain"
       allowFullScreen="true"
       type="application/x-shockwave-flash"
-      FlashVars="menu=1&amp;id=test1"
+      FlashVars="menu=1&amp;pid=test1"
       pluginspage="http://www.adobe.com/go/getflashplayer" />
 
 

@@ -511,7 +511,7 @@ public class Main extends Sprite
 
     // Notify the browser if possible.
     if (ExternalInterface.available) {
-      ExternalInterface.call("VGAPlayerOnLoad", _config.id);
+      ExternalInterface.call("VGAPlayerOnLoad", _config.pid);
     }
 
     if (_config.autoplay) {
@@ -682,7 +682,7 @@ class Config extends Object
   public var style:Style = new Style();
   public var volumeMutedColor:uint = 0xffff0000;
   public var imageUrl:String = null;
-  public var id:String = null;
+  public var pid:String = null;
 
   public function Config(obj:Object)
   {
@@ -771,9 +771,9 @@ class Config extends Object
       if (obj.imageUrl) {
 	imageUrl = obj.imageUrl;
       }
-      // id
-      if (obj.id) {
-	id = obj.id;
+      // pid
+      if (obj.pid) {
+	pid = obj.pid;
       }
     }
   }
