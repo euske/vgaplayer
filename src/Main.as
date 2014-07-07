@@ -38,7 +38,7 @@ public class Main extends Sprite
   private const STOPPED:String = "STOPPED";
   private const PAUSED:String = "PAUSED"; // only used for non-remoting streams.
   
-  private var _params:Params;
+  private var _config:Config;
   private var _video:Video;
   private var _overlay:OverlayButton;
   private var _control:ControlBar;
@@ -56,30 +56,30 @@ public class Main extends Sprite
   public function Main()
   {
     var info:LoaderInfo = LoaderInfo(this.root.loaderInfo);
-    _params = new Params(info.parameters);
+    _config = new Config(info.parameters);
     
-    stage.color = _params.bgColor;
+    stage.color = _config.bgColor;
     stage.scaleMode = StageScaleMode.NO_SCALE;
     stage.align = StageAlign.TOP_LEFT;
 
-    if (_params.imageUrl != null) {
+    if (_config.imageUrl != null) {
       _imageLoader = new Loader();
       _imageLoader.contentLoaderInfo.addEventListener(Event.COMPLETE, onImageLoaded);
-      _imageLoader.load(new URLRequest(_params.imageUrl));
+      _imageLoader.load(new URLRequest(_config.imageUrl));
       addChild(_imageLoader);
     }
 
     _video = new Video();
-    _video.smoothing = _params.smoothing;
+    _video.smoothing = _config.smoothing;
     addChild(_video);
 
     _overlay = new OverlayButton();
-    _overlay.style = _params.style;
+    _overlay.style = _config.style;
     _overlay.addEventListener(MouseEvent.CLICK, onOverlayClick);
     addChild(_overlay);
 
-    _control = new ControlBar(_params.fullscreen, _params.menu);
-    _control.style = _params.style;
+    _control = new ControlBar(_config.fullscreen, _config.menu);
+    _control.style = _config.style;
     _control.playButton.addEventListener(MouseEvent.CLICK, onPlayPauseClick);
     _control.volumeSlider.addEventListener(Slider.CLICK, onVolumeSliderClick);
     _control.volumeSlider.addEventListener(Slider.CHANGED, onVolumeSliderChanged);
@@ -95,7 +95,7 @@ public class Main extends Sprite
     addChild(_control);
 
     _debugdisp = new DebugDisplay();
-    _debugdisp.visible = _params.debug;
+    _debugdisp.visible = _config.debug;
     addChild(_debugdisp);
 
     addEventListener(Event.ADDED_TO_STAGE, onAdded);
@@ -109,13 +109,13 @@ public class Main extends Sprite
     resize();
 
     log("FlashVars:", expandAttrs(info.parameters));
-    log("url:", _params.url);
-    log("fullscreen:", _params.fullscreen);
-    log("bufferTime:", _params.bufferTime);
-    log("bufferTimeMax:", _params.bufferTimeMax);
-    log("maxPauseBufferTime:", _params.maxPauseBufferTime);
-    log("backBufferTime:", _params.backBufferTime);
-    log("inBufferSeek:", _params.inBufferSeek);
+    log("url:", _config.url);
+    log("fullscreen:", _config.fullscreen);
+    log("bufferTime:", _config.bufferTime);
+    log("bufferTimeMax:", _config.bufferTimeMax);
+    log("maxPauseBufferTime:", _config.maxPauseBufferTime);
+    log("backBufferTime:", _config.backBufferTime);
+    log("inBufferSeek:", _config.inBufferSeek);
 
     _connection = new NetConnection();
     _connection.addEventListener(NetStatusEvent.NET_STATUS, onNetStatusEvent);
@@ -224,7 +224,7 @@ public class Main extends Sprite
     case Keyboard.ESCAPE:	// Esc
     case 68:			// D
       // Toggle the debug window if debug = 1.
-      if (_params.debug) {
+      if (_config.debug) {
 	_debugdisp.visible = !_debugdisp.visible;
       }
       break;
@@ -282,15 +282,15 @@ public class Main extends Sprite
       _stream.client.onMetaData = onMetaData;
       _stream.client.onCuePoint = onCuePoint;
       _stream.client.onPlayStatus = onPlayStatus;
-      _stream.inBufferSeek = _params.inBufferSeek;
-      _stream.bufferTime = _params.bufferTime;
-      _stream.bufferTimeMax = _params.bufferTimeMax;
-      _stream.maxPauseBufferTime = _params.maxPauseBufferTime;
-      _stream.backBufferTime = _params.backBufferTime;
+      _stream.inBufferSeek = _config.inBufferSeek;
+      _stream.bufferTime = _config.bufferTime;
+      _stream.bufferTimeMax = _config.bufferTimeMax;
+      _stream.maxPauseBufferTime = _config.maxPauseBufferTime;
+      _stream.backBufferTime = _config.backBufferTime;
       _video.attachNetStream(_stream);
       _control.seekBar.isStatic = !_remoting;
       updateVolume(_control.volumeSlider);
-      startPlaying(_params.start);
+      startPlaying(_config.start);
       break;
 
     case "NetConnection.Connect.Closed":
@@ -514,8 +514,8 @@ public class Main extends Sprite
       ExternalInterface.call("VGAPlayerOnLoad");
     }
 
-    if (_params.autoplay) {
-      connect(_params.url);
+    if (_config.autoplay) {
+      connect(_config.url);
     }
   }
 
@@ -616,7 +616,7 @@ public class Main extends Sprite
 	if (_connection.connected) {
 	  startPlaying(_control.seekBar.time);
 	} else {
-	  connect(_params.url);
+	  connect(_config.url);
 	}
       }
       break;
@@ -660,10 +660,10 @@ import flash.net.NetStream;
 import flash.net.NetStreamInfo;
 import baseui.Style;
 
-//  Params
+//  Config
 //  Object to hold the parameters given by FlashVars.
 //
-class Params extends Object
+class Config extends Object
 {
   public var debug:Boolean = false;
   public var url:String = null;
@@ -683,7 +683,7 @@ class Params extends Object
   public var volumeMutedColor:uint = 0xffff0000;
   public var imageUrl:String = null;
 
-  public function Params(obj:Object)
+  public function Config(obj:Object)
   {
     super();
     if (obj != null) {
