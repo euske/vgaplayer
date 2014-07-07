@@ -44,25 +44,25 @@ It is possible to add a menu. (Javascript required.)
 There are two Javascript callback functions: 
 `VGAPlayerOnLoad` and `VGAPlayerOnMenuChoose`
 
-   <script language="JavaScript">
-   function VGAPlayerOnLoad(id) {
-     // Called when a player is initialized.
-     flashObject.VGAPlayerAddMenuItem("High Quality", "rtmp://rtmp.example.com/high");
-     flashObject.VGAPlayerAddMenuItem("Low Quality", "rtmp://rtmp.example.com/low");
-   }
-   function VGAPlayerOnMenuChoose(value) {
-     // Called when a menu item is chosen.
-     flashObject.VGAPlayerConnect(value);
-   }
-   </script>
-   ...
-   <embed src="vgaplayer.swf"
-     id="flashObject" width="100%" height="99%" 
-     allowScriptAccess="sameDomain"
-     allowFullScreen="true"
-     type="application/x-shockwave-flash"
-     FlashVars="menu=1&amp;id=test1"
-     pluginspage="http://www.adobe.com/go/getflashplayer" />
+    <script language="JavaScript">
+    function VGAPlayerOnLoad(id) {
+      // Called when a player is initialized.
+      flashObject.VGAPlayerAddMenuItem("High Quality", "rtmp://rtmp.example.com/high");
+      flashObject.VGAPlayerAddMenuItem("Low Quality", "rtmp://rtmp.example.com/low");
+    }
+    function VGAPlayerOnMenuChoose(value) {
+      // Called when a menu item is chosen.
+      flashObject.VGAPlayerConnect(value);
+    }
+    </script>
+    ...
+    <embed src="vgaplayer.swf"
+      id="flashObject" width="100%" height="99%" 
+      allowScriptAccess="sameDomain"
+      allowFullScreen="true"
+      type="application/x-shockwave-flash"
+      FlashVars="menu=1&amp;id=test1"
+      pluginspage="http://www.adobe.com/go/getflashplayer" />
 
 
 Terms and Conditions
