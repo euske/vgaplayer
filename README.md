@@ -44,6 +44,8 @@ It is possible to add a menu. (Javascript required.)
 There are two Javascript callback functions: 
 `VGAPlayerOnLoad` and `VGAPlayerOnMenuChoose`.
 
+Demo: http://euske.github.io/vgaplayer/jstest.html
+
     <script language="JavaScript">
     function VGAPlayerOnLoad(pid) {
       // Called when a player is initialized.
