@@ -7,8 +7,7 @@ Demo: http://euske.github.io/vgaplayer/demo.html
 
 Typical usage:
 
-    <embed src="play.swf" width="100%" height="99%" 
-         play="true" 
+    <embed src="vgaplayer.swf" width="100%" height="99%" 
          allowScriptAccess="sameDomain"
          allowFullScreen="true"
          type="application/x-shockwave-flash"
@@ -30,10 +29,41 @@ FlashVars Parameters:
   * bgColor: Background color. (default: "#000000")
   * buttonBgColor: Button background color. The upper 8 bits are for alpha. (default: "#448888ff")
   * buttonFgColor: Button foreground color. (default: "#cc888888")
-  * buttonHiFgColor: Button highlighting color. (default: "#ffeeeeee")
+  * buttonHiFgColor: Button highlighted foreground color. (default: "#ffeeeeee")
+  * buttonHiBgColor: Button highlighted background color. (default: "#ff444488")
   * buttonBorderColor: Button border color. (default: "#88ffffff")
   * volumeMutedColor: Color used when the volume is muted. (default: "#ffff0000")
   * imageUrl: Background image URL.
+  * menu: Add a menu. (Explained below.) (default: 0)
+  * id: String to identify a Flash object. (Explained below.)
+
+Adding a Menu
+-------------
+
+It is possible to add a menu. (Javascript required.)
+There are two Javascript callback functions: 
+`VGAPlayerOnLoad` and `VGAPlayerOnMenuChoose`
+
+   <script language="JavaScript">
+   function VGAPlayerOnLoad(id) {
+     // Called when a player is initialized.
+     flashObject.VGAPlayerAddMenuItem("High Quality", "rtmp://rtmp.example.com/high");
+     flashObject.VGAPlayerAddMenuItem("Low Quality", "rtmp://rtmp.example.com/low");
+   }
+   function VGAPlayerOnMenuChoose(value) {
+     // Called when a menu item is chosen.
+     flashObject.VGAPlayerConnect(value);
+   }
+   </script>
+   ...
+   <embed src="vgaplayer.swf"
+     id="flashObject" width="100%" height="99%" 
+     allowScriptAccess="sameDomain"
+     allowFullScreen="true"
+     type="application/x-shockwave-flash"
+     FlashVars="menu=1&amp;id=test1"
+     pluginspage="http://www.adobe.com/go/getflashplayer" />
+
 
 Terms and Conditions
 --------------------
