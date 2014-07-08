@@ -74,6 +74,7 @@ public class Main extends Sprite
     addChild(_video);
 
     _overlay = new OverlayButton();
+    _overlay.visible = false;
     _overlay.style = _config.style;
     _overlay.addEventListener(MouseEvent.CLICK, onOverlayClick);
     addChild(_overlay);
@@ -514,6 +515,7 @@ public class Main extends Sprite
       ExternalInterface.call("VGAPlayerOnLoad", _config.pid);
     }
 
+    _overlay.visible = (_config.url != null);
     if (_config.autoplay) {
       connect(_config.url);
     }
@@ -592,6 +594,7 @@ public class Main extends Sprite
 	url = null;
       }
       log("Connecting:", url);
+      _overlay.visible = true;
       _control.statusDisplay.text = "Connecting...";
       _connection.connect(url);
     }
