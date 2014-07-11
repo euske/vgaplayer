@@ -51,15 +51,22 @@ public class PopupMenuButton extends Button
     }
   }
 
+  protected override function onMouseDown(e:MouseEvent):void 
+  {
+    if (_popup.parent != null && !_popup.highlit && !highlit) {
+      // The menu is still open.
+      _popup.parent.removeChild(_popup);
+    }
+    super.onMouseDown(e);
+  }
+
   protected override function onMouseDownLocal(e:MouseEvent):void 
   {
     super.onMouseDownLocal(e);
-    if (_popup.parent != null) {
-      // The menu is still open.
-      _popup.parent.removeChild(_popup);
-    } else {
+    if (_popup.parent == null) {
       var container:DisplayObjectContainer = (_container != null)? _container : parent;
       var p:Point = container.globalToLocal(new Point(e.stageX, e.stageY));
+      _popup.update();
       _popup.x = p.x;
       if (container.width < _popup.x+_popup.width) {
 	_popup.x -= _popup.width;

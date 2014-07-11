@@ -7,7 +7,7 @@ public class Button extends Control
 {
   public function get buttonSize():int
   {
-    return Math.min(width, height);
+    return Math.min(controlWidth, controlHeight);
   }
 
   public override function repaint():void
@@ -16,7 +16,7 @@ public class Button extends Control
 
     if (highlit) {
       graphics.lineStyle(0, style.borderColor, (style.borderColor>>>24)/255);
-      graphics.drawRect(0, 0, width, height);
+      graphics.drawRect(0, 0, controlWidth, controlHeight);
     }
   }
 }

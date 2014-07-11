@@ -14,7 +14,6 @@ public class TextMenuItem extends MenuItem
     super();
     _text = new TextField();
     _text.selectable = false;
-    _text.background = true;
     _text.autoSize = TextFieldAutoSize.LEFT;
     addChild(_text);
   }
@@ -27,15 +26,25 @@ public class TextMenuItem extends MenuItem
   public function set label(v:String):void
   {
     _text.text = v;
-    invalidate();
+    resize(_text.width, _text.height);
   }
 
   public override function repaint():void
   {
-    super.repaint();
+    //super.repaint();
 
-    _text.backgroundColor = (highlit)? style.bgColor : style.hiBgColor;
-    _text.textColor = (highlit)? style.hiFgColor : style.fgColor;
+    graphics.clear();
+    if (highlit) {
+      graphics.beginFill(style.hiFgColor);
+    } else {
+      graphics.beginFill(0, 0);
+    }
+    graphics.drawRect(0, 0, controlWidth, controlHeight);
+    graphics.endFill();
+
+    _text.x = (highlit)? 1 : 0;
+    _text.y = (highlit)? 1 : 0;
+    _text.textColor = (highlit)? style.hiBgColor : style.fgColor;
   }
 }
 

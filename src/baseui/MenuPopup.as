@@ -4,12 +4,13 @@ import flash.events.MouseEvent;
 
 //  MenuPopup
 //
-public class MenuPopup extends Control
+public class MenuPopup extends Button
 {
   public var margin:int = 2;
 
   private var _totalWidth:int;
   private var _totalHeight:int;
+  private var _needResize:Boolean;
   private var _items:Vector.<MenuItem>;
   private var _chosen:MenuItem;
 
@@ -17,8 +18,6 @@ public class MenuPopup extends Control
   {
     super();
     _items = new Vector.<MenuItem>();
-    _totalWidth = 0;
-    _totalHeight = 0;
   }
 
   public override function set style(value:Style):void
@@ -45,14 +44,10 @@ public class MenuPopup extends Control
   public function addItem(item:MenuItem):MenuItem
   {
     item.style = style;
-    item.x = margin;
-    item.y = margin+_totalHeight;
     item.addEventListener(MenuItemEvent.CHOOSE, onItemChosen);
     addChild(item);
     _items.push(item);
-    _totalWidth = Math.max(_totalWidth, item.width);
-    _totalHeight += item.height;
-    resize(_totalWidth+margin*2, _totalHeight+margin*2);
+    _needResize = true;
     return item;
   }
 
@@ -74,26 +69,32 @@ public class MenuPopup extends Control
     }
   }
 
+  private function updateSize():void
+  {
+    var item:MenuItem;
+    _totalWidth = 0;
+    _totalHeight = 0;
+    for each (item in _items) {
+      item.x = margin;
+      item.y = margin+_totalHeight;
+      _totalWidth = Math.max(_totalWidth, item.controlWidth);
+      _totalHeight += item.controlHeight;
+    }
+    for each (item in _items) {
+      item.resize(_totalWidth, item.controlHeight);
+    }
+    resize(_totalWidth+margin*2, _totalHeight+margin*2);
+    _needResize = false;
+  }
+
   public override function update():void
   {
     super.update();
+    if (_needResize) {
+      updateSize();
+    }
     for each (var item:MenuItem in _items) {
       item.update();
-    }
-  }
-
-  public override function repaint():void
-  {
-    var w:int = _totalWidth+margin*2;
-    var h:int = _totalHeight+margin*2;
-    graphics.clear();
-    graphics.beginFill(style.hiBgColor, (style.hiBgColor>>>24)/255);
-    graphics.drawRect(0, 0, w, h);
-    graphics.endFill();
-
-    if (highlit) {
-      graphics.lineStyle(0, style.borderColor, (style.borderColor>>>24)/255);
-      graphics.drawRect(0, 0, w, h);
     }
   }
 }

@@ -41,6 +41,16 @@ public class Control extends Sprite
     stage.addEventListener(MouseEvent.MOUSE_UP, onMouseUp);
   }
 
+  public function get controlWidth():int
+  {
+    return _width;
+  }
+
+  public function get controlHeight():int
+  {
+    return _height;
+  }
+
   public virtual function get style():Style
   {
     return _style;
@@ -106,7 +116,7 @@ public class Control extends Sprite
     var color:uint = (highlit)? style.hiBgColor : style.bgColor;
     graphics.clear();
     graphics.beginFill(color, (color>>>24)/255);
-    graphics.drawRect(0, 0, _width, _height);
+    graphics.drawRect(0, 0, controlWidth, controlHeight);
     graphics.endFill();
   }
 
