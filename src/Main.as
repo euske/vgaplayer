@@ -45,6 +45,7 @@ public class Main extends Sprite
   private var _debugdisp:DebugDisplay;
   private var _imageLoader:Loader;
 
+  private var _url:String;
   private var _streamPath:String;
   private var _remoting:Boolean; // true if connected via RTMP or FMS.
   private var _connection:NetConnection;
@@ -160,7 +161,7 @@ public class Main extends Sprite
     return x;
   }
 
-  private function getBaseURL(url:String, proto:String="rtmp"):String
+  private function getCanonicalizedURL(url:String, proto:String="rtmp"):String
   {
     if (url.indexOf("://") < 0) {
       // Resolve a relative url.
@@ -517,7 +518,8 @@ public class Main extends Sprite
 
     _overlay.visible = (_config.url != null);
     if (_config.autoplay) {
-      connect(_config.url);
+      _url = _config.url;
+      connect();
     }
   }
 
@@ -573,16 +575,17 @@ public class Main extends Sprite
   private function externalConnect(url:String):void
   {
     stopPlaying();
-    connect(url);
+    _url = url;
+    connect();
   }
 
-  public function connect(url:String):void
+  public function connect():void
   {
     if (_connection.connected) {
       _connection.close();
     }
-    if (url != null && !_connection.connected) {
-      url = getBaseURL(url);
+    if (_url != null && !_connection.connected) {
+      var url:String = getCanonicalizedURL(_url);
       if (url.substr(0, 5) == "rtmp:") {
 	var i:int = url.lastIndexOf("/");
 	_streamPath = url.substr(i+1);
@@ -619,7 +622,7 @@ public class Main extends Sprite
 	if (_connection.connected) {
 	  startPlaying(_control.seekBar.time);
 	} else {
-	  connect(_config.url);
+	  connect();
 	}
       }
       break;
