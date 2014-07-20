@@ -30,10 +30,11 @@ public class OverlayButton extends Sprite
   public function OverlayButton()
   {
     super();
-    _timeout = -fadeDuration;
+    _timeout = 0;
     alpha = 0;
     addEventListener(MouseEvent.MOUSE_OVER, onMouseOver);
     addEventListener(MouseEvent.MOUSE_OUT, onMouseOut);
+    addEventListener(MouseEvent.MOUSE_MOVE, onMouseMove);
   }
 
   public function get state():String
@@ -69,6 +70,13 @@ public class OverlayButton extends Sprite
     _invalidated = true;
   }
 
+  protected virtual function onMouseMove(e:MouseEvent):void 
+  {
+    if (_timeout < getTimer()) {
+      show();
+    }
+  }
+
   public function resize(w:int, h:int):void
   {
     _width = w;
@@ -78,7 +86,7 @@ public class OverlayButton extends Sprite
   
   public function show():void
   {
-    _timeout = getTimer();
+    _timeout = getTimer()+fadeDuration;
     _invalidated = true;
   }
 
@@ -113,6 +121,13 @@ public class OverlayButton extends Sprite
       graphics.drawRect(cx+size*1, cy-size*4, size*2, size*8);
       graphics.endFill();
       break;
+    case BUSY:
+      graphics.beginFill(fgcolor, (fgcolor>>>24)/255);
+      graphics.drawCircle(cx-size*3, cy, size);
+      graphics.drawCircle(cx, cy, size);
+      graphics.drawCircle(cx+size*3, cy, size);
+      graphics.endFill();
+      break;
     }
   }
   
@@ -124,7 +139,7 @@ public class OverlayButton extends Sprite
     }
 
     if (_autohide) {
-      var a:Number = (_timeout - getTimer())/fadeDuration + 1.0;
+      var a:Number = (_timeout - getTimer())/fadeDuration;
       alpha = Math.min(Math.max(a, 0.0), 1.0);
     } else {
       alpha = 1.0;

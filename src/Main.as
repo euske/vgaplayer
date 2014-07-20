@@ -442,7 +442,7 @@ public class Main extends Sprite
     switch (_state) {
     case STARTING:
       _overlay.state = _overlay.BUSY;
-      _overlay.autohide = true;
+      _overlay.autohide = false;
       _control.playButton.state = _control.playButton.BUSY;
       if (text == null) {
 	text = "Starting...";
@@ -462,7 +462,7 @@ public class Main extends Sprite
 
     case STOPPING:
       _overlay.state = _overlay.BUSY;
-      _overlay.autohide = true;
+      _overlay.autohide = false;
       _control.playButton.state = _control.playButton.BUSY;
       if (text == null) {
 	text = "Stopping...";
