@@ -10,16 +10,20 @@ import baseui.Style;
 //
 public class OverlayButton extends Sprite
 {
+  public const PLAY:String = "PLAY";
+  public const PAUSE:String = "PAUSE";
+  public const BUSY:String = "BUSY";
+
   public var style:Style = new Style();
   public var buttonSize:int = 100;
   public var fadeDuration:int = 2000;
-
+  
   private var _size:int;
   private var _width:int;
   private var _height:int;
   private var _invalidated:Boolean;
   private var _highlit:Boolean;
-  private var _toPlay:Boolean;
+  private var _state:String;
   private var _autohide:Boolean;
   private var _timeout:int;
 
@@ -32,14 +36,14 @@ public class OverlayButton extends Sprite
     addEventListener(MouseEvent.MOUSE_OUT, onMouseOut);
   }
 
-  public function get toPlay():Boolean
+  public function get state():String
   {
-    return _toPlay;
+    return _state;
   }
 
-  public function set toPlay(value:Boolean):void
+  public function set state(value:String):void
   {
-    _toPlay = value;
+    _state = value;
     _invalidated = true;
   }
 
@@ -94,17 +98,21 @@ public class OverlayButton extends Sprite
     graphics.beginFill(bgcolor, (bgcolor>>>24)/255);
     graphics.drawRect(cx-buttonSize/2, cy-buttonSize/2, buttonSize, buttonSize);
     graphics.endFill();
-    if (_toPlay) {
+
+    switch (_state) {
+    case PLAY:
       graphics.beginFill(fgcolor, (fgcolor>>>24)/255);
       graphics.moveTo(cx-size*3, cy-size*4);
       graphics.lineTo(cx-size*3, cy+size*4);
       graphics.lineTo(cx+size*4, cy);
       graphics.endFill();
-    } else {
+      break;
+    case PAUSE:
       graphics.beginFill(fgcolor, (fgcolor>>>24)/255);
       graphics.drawRect(cx-size*3, cy-size*4, size*2, size*8);
       graphics.drawRect(cx+size*1, cy-size*4, size*2, size*8);
       graphics.endFill();
+      break;
     }
   }
   

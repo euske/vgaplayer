@@ -7,16 +7,20 @@ import baseui.Button;
 //
 public class PlayPauseButton extends Button
 {
-  private var _toPlay:Boolean = false;
+  public const PLAY:String = "PLAY";
+  public const PAUSE:String = "PAUSE";
+  public const BUSY:String = "BUSY";
 
-  public function get toPlay():Boolean
+  private var _state:String;
+
+  public function get state():String
   {
-    return _toPlay;
+    return _state;
   }
 
-  public function set toPlay(value:Boolean):void
+  public function set state(value:String):void
   {
-    _toPlay = value;
+    _state = value;
     invalidate();
   }
 
@@ -28,17 +32,20 @@ public class PlayPauseButton extends Button
     var cx:int = width/2 + ((pressed)? 1 : 0);
     var cy:int = height/2 + ((pressed)? 1 : 0);
 
-    if (_toPlay) {
+    switch (_state) {
+    case PLAY:
       graphics.beginFill(color, (color>>>24)/255);
       graphics.moveTo(cx-size*3, cy-size*4);
       graphics.lineTo(cx-size*3, cy+size*4);
       graphics.lineTo(cx+size*4, cy);
       graphics.endFill();
-    } else {
+      break;
+    case PAUSE:
       graphics.beginFill(color, (color>>>24)/255);
       graphics.drawRect(cx-size*3, cy-size*4, size*2, size*8);
       graphics.drawRect(cx+size*1, cy-size*4, size*2, size*8);
       graphics.endFill();
+      break;
     }
   }
 }

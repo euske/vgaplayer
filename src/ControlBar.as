@@ -30,7 +30,6 @@ public class ControlBar extends Sprite
     _timeout = -fadeDuration;
 
     playButton = new PlayPauseButton();
-    playButton.toPlay = true;
     addChild(playButton);
 
     volumeSlider = new VolumeSlider();

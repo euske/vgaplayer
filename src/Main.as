@@ -232,7 +232,7 @@ public class Main extends Sprite
       break;
     case Keyboard.SPACE:
       // Toggle play/stop.
-      setPlayState(_control.playButton.toPlay);
+      setPlayState(_control.playButton.state == _control.playButton.PLAY);
       break;
     case Keyboard.LEFT:
       // Rewind for 10 sec.
@@ -372,13 +372,13 @@ public class Main extends Sprite
   {  
     var overlay:OverlayButton = OverlayButton(e.target);
     overlay.show();
-    setPlayState(overlay.toPlay);
+    setPlayState(overlay.state == overlay.PLAY);
   }
 
   private function onPlayPauseClick(e:Event):void
   {
     var button:PlayPauseButton = PlayPauseButton(e.target);
-    setPlayState(button.toPlay);
+    setPlayState(button.state == button.PLAY);
   }
 
   private function onVolumeSliderClick(e:Event):void
@@ -441,9 +441,9 @@ public class Main extends Sprite
     _state = state;
     switch (_state) {
     case STARTING:
-      _overlay.toPlay = true;
+      _overlay.state = _overlay.BUSY;
       _overlay.autohide = true;
-      _control.playButton.toPlay = false;
+      _control.playButton.state = _control.playButton.BUSY;
       if (text == null) {
 	text = "Starting...";
       }
@@ -451,9 +451,9 @@ public class Main extends Sprite
 
     case STARTED:
       _control.seekBar.unlock();
-      _overlay.toPlay = false;
+      _overlay.state = _overlay.PAUSE;
       _overlay.autohide = true;
-      _control.playButton.toPlay = false;
+      _control.playButton.state = _control.playButton.PAUSE;
       _control.autohide = true;
       if (text == null) {
 	text = "Playing";
@@ -461,9 +461,9 @@ public class Main extends Sprite
       break;
 
     case STOPPING:
-      _overlay.toPlay = false;
+      _overlay.state = _overlay.BUSY;
       _overlay.autohide = true;
-      _control.playButton.toPlay = false;
+      _control.playButton.state = _control.playButton.BUSY;
       if (text == null) {
 	text = "Stopping...";
       }
@@ -471,9 +471,9 @@ public class Main extends Sprite
 
     case STOPPED:
     case PAUSED:
-      _overlay.toPlay = true;
+      _overlay.state = _overlay.PLAY;
       _overlay.autohide = false;
-      _control.playButton.toPlay = true;
+      _control.playButton.state = _control.playButton.PLAY;
       _control.autohide = false;
       if (text == null) {
 	text = "Stopped";
@@ -516,10 +516,13 @@ public class Main extends Sprite
       ExternalInterface.call("VGAPlayerOnLoad", _config.pid);
     }
 
-    _overlay.visible = (_config.url != null);
-    if (_config.autoplay) {
-      _url = _config.url;
-      connect();
+    if (_config.url != null) {
+      _overlay.visible = true;
+      _overlay.state = _overlay.PLAY;
+      if (_config.autoplay) {
+	_url = _config.url;
+	connect();
+      }
     }
   }
 
